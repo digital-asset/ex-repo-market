@@ -1,11 +1,13 @@
+#
 # Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
+#
 
-project:
-  sdk-version: 0.13.12
-  name: ex-repo-market
-  source: src/main/daml/RepoMarket.daml
-  parties:
+sdk-version: 0.13.10
+sdk-version: 0.13.12
+name: ex-repo-market
+source: src/main/daml/RepoMarket.daml
+parties:
   - Citi
   - Barclays
   - JPMorgan
@@ -13,4 +15,8 @@ project:
   - CCP
   - Operator
   - PaymentProcessor
-version: 2
+version: 2.0.0
+exposed-modules: []
+dependencies:
+  - daml-prim
+  - daml-stdlib

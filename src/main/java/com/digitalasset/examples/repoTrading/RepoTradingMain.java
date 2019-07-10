@@ -48,7 +48,7 @@ public class RepoTradingMain {
     private String host = "localhost";
 
     @Option(name = "--port", aliases = {"-p"}, metaVar = "PORT", usage = "port to connect to")
-    private int port = 7600;
+    private int port = 6865;
 
     @Option(name = "--config", aliases = {"-c"}, metaVar = "CONFIG FILE", usage = "configuration file to load")
     private File configFile = new File("config.yaml");

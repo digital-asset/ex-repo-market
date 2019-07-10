@@ -14,7 +14,6 @@ run() {
 stop () {
   printf "\nstopping participants...\n"
   kill `ps -ae|grep ex-repo-trading-.*\.jar|grep -v grep|awk '{print $1}'`
-  da stop
   state=stop
 }
 
@@ -39,8 +38,6 @@ done
 TRADE_FILE=${1:-data/Trades12-2018-06-28.csv}
 
 rm -f $BASE/logs/apps.log
-
-da stop; da start
 
 for p in `sed -n -e '/tradingParties/,$p' config.yaml|awk '/name:/ { print $3 }'`
 do

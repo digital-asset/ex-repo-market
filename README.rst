@@ -37,14 +37,17 @@ Prequisites:
 * You have created the example project as detailed above
 
 1. Open a terminal window
-2. Change to the example folder: ``cd repo-market`` 
-3. Run the command ``./scrips/start.sh``. 
+2. Change to the example folder: ``cd repo-market``
+3. Run the command ``daml start``.
+4. Open another terminal window
+5. Change to the example folder: ``cd repo-market``
+6. Run the command ``./scrips/start.sh``.
 
 .. code-block:: bash
 
   $ ./scripts/start.sh
 
-This will start the system with a default trade file ``data/Trades12-2018-06-28.csv``. To run with another trade file add that file as an argument to the start script: 
+This will start the system with a default trade file ``data/Trades12-2018-06-28.csv``. To run with another trade file add that file as an argument to the start script:
 
 .. code-block:: bash
 
@@ -52,11 +55,11 @@ This will start the system with a default trade file ``data/Trades12-2018-06-28.
 
 Several example trade files are included in the ``data/`` folder.
 
-The script will start a Sandbox and Navigator, and run all automation processes necessary, logging progress output to the terminal. 
+The script will start a Sandbox and Navigator, and run all automation processes necessary, logging progress output to the terminal.
 
 The trades in the given trade file will load, and the system will pause, waiting for a command.
 
-Stop the system at any time by typing the interrupt character (Cntl-C) in the terminal window.
+Stop the system at any time by typing the interrupt character (Control-C) in both the ``start.sh`` and ``daml start`` terminal windows.
 
 Controlling the application
 ---------------------------
@@ -70,7 +73,7 @@ The example has a simple command-line interface to control the application. With
 To run these commands, use a new terminal window:
 
 1. Open a terminal window
-2. Change to the example folder: ``cd repo-market`` 
+2. Change to the example folder: ``cd repo-market``
 
 List trades available for settlement
 ####################################
@@ -110,7 +113,7 @@ The command will load the file in all trading participants, which you will see r
 
 .. code-block:: bash
 
-  $ ./scripts/loadTradeFile.sh data/Trades120-2018-11-26.csv 
+  $ ./scripts/loadTradeFile.sh data/Trades120-2018-11-26.csv
   Injected
   Injected
   Injected
@@ -128,7 +131,7 @@ To allow the workflow to be observed, trade participants delay for fixed delay b
 Adding trading parties
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The example reads a system configuration from the file ``config.yaml`` - you can add parties by updating this file. Make sure to define a name and new port number for the participant (see the existing file for the format). You can then create trade records for those parties in a new, or existing trade file. 
+The example reads a system configuration from the file ``config.yaml`` - you can add parties by updating this file. Make sure to define a name and new port number for the participant (see the existing file for the format). You can then create trade records for those parties in a new, or existing trade file.
 
 Note that you will also need to add these new parties to the DA project file ``da.yaml``.
 
