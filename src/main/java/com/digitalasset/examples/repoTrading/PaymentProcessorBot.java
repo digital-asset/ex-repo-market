@@ -3,15 +3,9 @@
 
 package com.digitalasset.examples.repoTrading;
 
-import com.digitalasset.examples.repoTrading.model.DomainObject;
-
+import com.daml.ledger.javaapi.data.*;
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
-import com.daml.ledger.javaapi.data.Filter;
-import com.daml.ledger.javaapi.data.FiltersByParty;
-import com.daml.ledger.javaapi.data.Identifier;
-import com.daml.ledger.javaapi.data.InclusiveFilter;
-import com.daml.ledger.javaapi.data.TransactionFilter;
 import main.ccp.CCPInvite;
 import org.pcollections.HashTreePMap;
 import org.pcollections.HashTreePSet;
@@ -37,11 +31,11 @@ public class PaymentProcessorBot extends RepoMarketBot {
     }
 
     @Override
-    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<Template> ledgerView) {
         return ledgerView.getContracts(ccpInviteTemplateId).entrySet().stream().map(this::confirmCcp);
     }
 
-    private CommandsAndPendingSet confirmCcp(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet confirmCcp(Map.Entry<String, Template> entry) {
 
         log.debug("{} confirms CCP", getPaymentProcessorName());
 

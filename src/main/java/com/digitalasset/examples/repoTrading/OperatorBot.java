@@ -3,20 +3,11 @@
 
 package com.digitalasset.examples.repoTrading;
 
-import com.digitalasset.examples.repoTrading.model.DomainObject;
+import com.daml.ledger.javaapi.data.*;
 import com.digitalasset.examples.repoTrading.util.Configuration;
 
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
-import com.daml.ledger.javaapi.data.CreateCommand;
-import com.daml.ledger.javaapi.data.DamlList;
-import com.daml.ledger.javaapi.data.Filter;
-import com.daml.ledger.javaapi.data.FiltersByParty;
-import com.daml.ledger.javaapi.data.Identifier;
-import com.daml.ledger.javaapi.data.InclusiveFilter;
-import com.daml.ledger.javaapi.data.Party;
-import com.daml.ledger.javaapi.data.Record;
-import com.daml.ledger.javaapi.data.TransactionFilter;
 import main.genesis.Genesis;
 import org.pcollections.HashTreePMap;
 import org.slf4j.Logger;
@@ -79,7 +70,7 @@ public class OperatorBot extends RepoMarketBot {
     }
 
     @Override
-    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         log.trace("Operator process, state: {}",ledgerView);
 
@@ -89,7 +80,7 @@ public class OperatorBot extends RepoMarketBot {
         );
     }
 
-    private CommandsAndPendingSet inviteCcpAndPaymentProcessor(Map.Entry<String,DomainObject> entry) {
+    private CommandsAndPendingSet inviteCcpAndPaymentProcessor(Map.Entry<String, Template> entry) {
 
         if(genesisContractId == null) {
             /*
@@ -117,7 +108,7 @@ public class OperatorBot extends RepoMarketBot {
         }
     }
 
-    private CommandsAndPendingSet inviteTradingParties(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet inviteTradingParties(Map.Entry<String, Template> entry) {
 
         if(ccpContractId == null) {
             /*

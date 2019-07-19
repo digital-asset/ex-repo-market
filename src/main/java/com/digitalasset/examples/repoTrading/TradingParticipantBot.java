@@ -3,27 +3,15 @@
 
 package com.digitalasset.examples.repoTrading;
 
-import com.digitalasset.examples.repoTrading.model.DomainObject;
-import com.digitalasset.examples.repoTrading.model.RecordMapper;
-import com.digitalasset.examples.repoTrading.model.TradeRegistrationRequest;
+import com.daml.ledger.javaapi.data.*;
 import com.digitalasset.examples.repoTrading.util.ControlServer;
 import com.digitalasset.examples.repoTrading.util.CsvFile;
 
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
-import com.daml.ledger.javaapi.data.Command;
-import com.daml.ledger.javaapi.data.Decimal;
-import com.daml.ledger.javaapi.data.Filter;
-import com.daml.ledger.javaapi.data.FiltersByParty;
-import com.daml.ledger.javaapi.data.Identifier;
-import com.daml.ledger.javaapi.data.InclusiveFilter;
-import com.daml.ledger.javaapi.data.Int64;
-import com.daml.ledger.javaapi.data.Party;
-import com.daml.ledger.javaapi.data.Record;
-import com.daml.ledger.javaapi.data.Text;
-import com.daml.ledger.javaapi.data.Timestamp;
-import com.daml.ledger.javaapi.data.TransactionFilter;
 import com.sun.net.httpserver.HttpExchange;
+import main.netobligation.NetObligationRequest;
+import main.trade.TradeRegistrationRequest;
 import main.tradingparticipant.InviteTradingParticipant;
 import main.tradingparticipant.TradingParticipant;
 import org.kohsuke.args4j.Argument;
@@ -36,7 +24,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,30 +84,28 @@ public class TradingParticipantBot extends RepoMarketBot {
 
             logMessage(String.format("requests trade with %s, tradeId '%s'",record.get("borrower"), record.get("tradeId")));
 
-            return new AbstractMap.SimpleEntry<>(
-                record.get("tradeId"),
-                newExercise(
-                    tradingParticipantTemplateId, tradingParticipantId,
-                    "RequestTrade",
-                    new Record.Field("borrower",              new Party(record.get("borrower"))),
-                    new Record.Field("tradeId",             new Int64(Long.parseLong(record.get("tradeId")))),
-                    new Record.Field("cusip",               new Text(record.get("cusip"))),
-                    new Record.Field("settlementDate",      new Timestamp(toEpochMicros(record.get("settlementDate")))),
-                    new Record.Field("tradeDate",           new Timestamp(toEpochMicros(record.get("tradeDate")))),
-                    new Record.Field("collateralQuantity",  new Decimal(new BigDecimal(record.get("collateralQuantity")))),
-                    new Record.Field("price",               new Decimal(new BigDecimal(record.get("price")))),
-                    new Record.Field("repoRate",            new Decimal(new BigDecimal(record.get("repoRate")))),
-                    new Record.Field("term",                new Int64(Long.parseLong(record.get("term")))),
-                    new Record.Field("startAmount",         new Decimal(new BigDecimal(record.get("startAmount")))),
-                    new Record.Field("endAmount",           new Decimal(new BigDecimal(record.get("endAmount")))),
-                    new Record.Field("currency",            new Text(record.get("currency")))
-                ));
+            TradingParticipant.ContractId contractId = new TradingParticipant.ContractId(tradingParticipantId);
+            ExerciseCommand exerciseCommand = contractId.exerciseRequestTrade(
+                    record.get("borrower"),
+                    Long.parseLong(record.get("tradeId")),
+                    record.get("cusip"),
+                    toInstant(record.get("settlementDate")),
+                    toInstant(record.get("tradeDate")),
+                    new BigDecimal(record.get("collateralQuantity")),
+                    new BigDecimal(record.get("price")),
+                    new BigDecimal(record.get("repoRate")),
+                    Long.parseLong(record.get("term")),
+                    new BigDecimal(record.get("startAmount")),
+                    new BigDecimal(record.get("endAmount")),
+                    record.get("currency"));
+
+            return new AbstractMap.SimpleEntry<>(record.get("tradeId"), exerciseCommand);
         }
 
-        long toEpochMicros(String dateString) {
+        Instant toInstant(String dateString) {
             LocalDate d = LocalDate.parse(dateString);
             log.trace("date string {} parses to {}",dateString,d);
-            return d.toEpochDay() * RecordMapper.MICRO_SEC_PER_DAY;
+            return d.atStartOfDay(ZoneOffset.UTC).toInstant();
         }
     }
 
@@ -146,7 +134,7 @@ public class TradingParticipantBot extends RepoMarketBot {
 
     public TradingParticipantBot(RepoTradingMain mainClass, String party) {
         super(mainClass,party);
-        this.tradeRegistrationRequestTemplateId = main.trade.TradeRegistrationRequest.TEMPLATE_ID;
+        this.tradeRegistrationRequestTemplateId = TradeRegistrationRequest.TEMPLATE_ID;
         this.inviteTradingParticipantTemplateId = InviteTradingParticipant.TEMPLATE_ID;
         this.tradingParticipantTemplateId = TradingParticipant.TEMPLATE_ID;
     }
@@ -196,7 +184,7 @@ public class TradingParticipantBot extends RepoMarketBot {
     }
 
     @Override
-    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         log.trace("TradingParticpant process: {}, state: {}", getParty(), ledgerView);
 
@@ -208,7 +196,7 @@ public class TradingParticipantBot extends RepoMarketBot {
         ).flatMap(s -> s);
     }
 
-    private CommandsAndPendingSet acceptTradingInvite(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet acceptTradingInvite(Map.Entry<String, Template> entry) {
 
         log.debug("{} accepts trading invitation", getParty());
 
@@ -225,7 +213,7 @@ public class TradingParticipantBot extends RepoMarketBot {
             HashTreePMap.singleton(inviteTradingParticipantTemplateId, HashTreePSet.singleton(contractId)));
     }
 
-    private CommandsAndPendingSet injectTrades(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet injectTrades(Map.Entry<String, Template> entry) {
 
         CommandsAndPendingSet commands = CommandsAndPendingSet.empty;
         if(tradingParticipantId == null) {
@@ -243,7 +231,7 @@ public class TradingParticipantBot extends RepoMarketBot {
         return commands;
     }
 
-    private CommandsAndPendingSet acceptTradeRequest(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet acceptTradeRequest(Map.Entry<String, Template> entry) {
 
         assert(entry.getValue().getClass() == TradeRegistrationRequest.class);
         String contractId = entry.getKey();
@@ -252,9 +240,9 @@ public class TradingParticipantBot extends RepoMarketBot {
         TradeRegistrationRequest request = (TradeRegistrationRequest) entry.getValue();
         CommandsAndPendingSet commands = CommandsAndPendingSet.empty;
 
-        if(tradingParticipantId != null && request.getTradeCounterParty().equals(getParty())) {
+        if(tradingParticipantId != null && request.tradeCounterParty.equals(getParty())) {
             // If this is for me, and we've been accepted as a trading particpant...
-            logMessage(String.format("accepting tradeId %s, lender=%s", request.getTradeInfo().getTradeId(), request.getTradeRequester()));
+            logMessage(String.format("accepting tradeId %s, lender=%s", request.tradeInfo.tradeId, request.tradeRequester));
 
             commands = newCommandAndPendingSet(
                 TRADE_INJECTION_WORKFLOW_ID,
@@ -264,20 +252,19 @@ public class TradingParticipantBot extends RepoMarketBot {
         return commands;
     }
 
-    private CommandsAndPendingSet acceptNetObligation(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet acceptNetObligation(Map.Entry<String, Template> entry) {
 
-        assert(entry.getValue().getClass() == RecordMapper.class);
-        RecordMapper netObligationRequest = (RecordMapper) entry.getValue();
+        NetObligationRequest netObligationRequest = (NetObligationRequest) entry.getValue();
 
         String contractId = entry.getKey();
 
         log.debug("accept net obligation: contractId={}, participantId={}, isBuy={}, cusip={}, paymentAmount={}, quantity={}",
             contractId,
-            netObligationRequest.getPartyField(6),
-            netObligationRequest.getBooleanField(7),
-            netObligationRequest.getTextField(1),
-            netObligationRequest.getDecimalField(3),
-            netObligationRequest.getDecimalField(4));
+            netObligationRequest.participantId,
+            netObligationRequest.isBuy,
+            netObligationRequest.cusip,
+            netObligationRequest.paymentAmount,
+            netObligationRequest.quantity);
 
         return newCommandAndPendingSet(
             NETTING_WORKFLOW_ID,

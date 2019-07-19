@@ -3,19 +3,31 @@
 
 package com.digitalasset.examples.repoTrading.util;
 
-import com.digitalasset.examples.repoTrading.model.Cash;
-import com.digitalasset.examples.repoTrading.model.DomainObject;
-import com.digitalasset.examples.repoTrading.model.DvP;
-import com.digitalasset.examples.repoTrading.model.LockedCash;
-import com.digitalasset.examples.repoTrading.model.MergedSecurity;
-import com.digitalasset.examples.repoTrading.model.NetObligation;
-import com.digitalasset.examples.repoTrading.model.NovatedTrade;
-import com.digitalasset.examples.repoTrading.model.RecordMapper;
-import com.digitalasset.examples.repoTrading.model.Security;
-import com.digitalasset.examples.repoTrading.model.Trade;
-import com.digitalasset.examples.repoTrading.model.TradeRegistrationRequest;
-
+import com.daml.ledger.javaapi.data.Identifier;
+import com.daml.ledger.javaapi.data.Template;
 import com.daml.ledger.javaapi.data.Record;
+import main.cash.Cash;
+import main.cash.LockedCash;
+import main.cashrequest.CashRequest;
+import main.ccp.CCP;
+import main.ccp.CCPInvite;
+import main.ccp.InitiateSettlementControl;
+import main.ccp.InviteClearingHouse;
+import main.dvp.AllocatedDvP;
+import main.dvp.CashAllocatedDvP;
+import main.dvp.DvP;
+import main.dvp.SettledDvP;
+import main.genesis.Genesis;
+import main.netobligation.NetObligation;
+import main.netobligation.NetObligationRequest;
+import main.netting.NettingGroup;
+import main.security.MergedSecurity;
+import main.security.Security;
+import main.trade.NovatedTrade;
+import main.trade.Trade;
+import main.trade.TradeRegistrationRequest;
+import main.tradingparticipant.InviteTradingParticipant;
+import main.tradingparticipant.TradingParticipant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,22 +35,54 @@ public class ModelMapper {
 
     private static final Logger log = LoggerFactory.getLogger(ModelMapper.class);
 
-    public static DomainObject domainObjectFromRecord(String templateId, Record createArgs) {
-        DomainObject modelObject;
-        switch(templateId) {
-            case "Main.Cash:Cash": modelObject = Cash.fromRecord(createArgs); break;
-            case "Main.Cash:LockedCash": modelObject = LockedCash.fromRecord(createArgs); break;
-            case "Main.Security:Security": modelObject = Security.fromRecord(createArgs); break;
-            case "Main.Security:MergedSecurity": modelObject = MergedSecurity.fromRecord(createArgs); break;
-            case "Main.Trade:NovatedTrade": modelObject = NovatedTrade.fromRecord(createArgs); break;
-            case "Main.DvP:DvP": modelObject = DvP.fromRecord(createArgs); break;
-            case "Main.DvP:CashAllocatedDvP": modelObject = DvP.fromRecord(createArgs); break;
-            case "Main.DvP:AllocatedDvP": modelObject = DvP.fromRecord(createArgs); break;
-            case "Main.DvP:SettledDvP": modelObject = DvP.fromRecord(createArgs); break;
-            case "Main.NetObligation:NetObligation": modelObject = NetObligation.fromRecord(createArgs); break;
-            case "Main.Trade:TradeRegistrationRequest": modelObject = TradeRegistrationRequest.fromRecord(createArgs); break;
-            case "Main.Trade:Trade": modelObject = Trade.fromRecord(createArgs); break;
-            default: modelObject = RecordMapper.fromRecord(createArgs); break;
+    public static Template domainObjectFromRecord(Identifier templateId, Record createArgs) {
+        Template modelObject;
+        if (templateId.equals(Cash.TEMPLATE_ID)) {
+            modelObject = Cash.fromValue(createArgs);
+        } else if (templateId.equals(LockedCash.TEMPLATE_ID)) {
+            modelObject = LockedCash.fromValue(createArgs);
+        } else if (templateId.equals(Security.TEMPLATE_ID)) {
+            modelObject = Security.fromValue(createArgs);
+        } else if (templateId.equals(MergedSecurity.TEMPLATE_ID)) {
+            modelObject = MergedSecurity.fromValue(createArgs);
+        } else if (templateId.equals(NovatedTrade.TEMPLATE_ID)) {
+            modelObject = NovatedTrade.fromValue(createArgs);
+        } else if (templateId.equals(DvP.TEMPLATE_ID)) {
+            modelObject = DvP.fromValue(createArgs);
+        } else if (templateId.equals(CashAllocatedDvP.TEMPLATE_ID)) {
+            modelObject = CashAllocatedDvP.fromValue(createArgs);
+        } else if (templateId.equals(AllocatedDvP.TEMPLATE_ID)) {
+            modelObject = AllocatedDvP.fromValue(createArgs);
+        } else if (templateId.equals(SettledDvP.TEMPLATE_ID)) {
+            modelObject = SettledDvP.fromValue(createArgs);
+        } else if (templateId.equals(NetObligationRequest.TEMPLATE_ID)) {
+            modelObject = NetObligationRequest.fromValue(createArgs);
+        } else if (templateId.equals(NetObligation.TEMPLATE_ID)) {
+            modelObject = NetObligation.fromValue(createArgs);
+        } else if (templateId.equals(TradeRegistrationRequest.TEMPLATE_ID)) {
+            modelObject = TradeRegistrationRequest.fromValue(createArgs);
+        } else if (templateId.equals(Trade.TEMPLATE_ID)) {
+            modelObject = Trade.fromValue(createArgs);
+        } else if (templateId.equals(Genesis.TEMPLATE_ID)) {
+            modelObject = Genesis.fromValue(createArgs);
+        } else if (templateId.equals(InviteClearingHouse.TEMPLATE_ID)) {
+            modelObject = InviteClearingHouse.fromValue(createArgs);
+        } else if (templateId.equals(InitiateSettlementControl.TEMPLATE_ID)) {
+            modelObject = InitiateSettlementControl.fromValue(createArgs);
+        } else if (templateId.equals(CCPInvite.TEMPLATE_ID)) {
+            modelObject = CCPInvite.fromValue(createArgs);
+        } else if (templateId.equals(CCP.TEMPLATE_ID)) {
+            modelObject = CCP.fromValue(createArgs);
+        } else if (templateId.equals(InviteTradingParticipant.TEMPLATE_ID)) {
+            modelObject = InviteTradingParticipant.fromValue(createArgs);
+        } else if (templateId.equals(TradingParticipant.TEMPLATE_ID)) {
+            modelObject = TradingParticipant.fromValue(createArgs);
+        } else if (templateId.equals(NettingGroup.TEMPLATE_ID)) {
+            modelObject = NettingGroup.fromValue(createArgs);
+        } else if (templateId.equals(CashRequest.TEMPLATE_ID)) {
+            modelObject = CashRequest.fromValue(createArgs);
+        } else {
+            throw new IllegalStateException("Unknown contract type: " + templateId);
         }
         log.trace("{} maps to {} ", templateId, modelObject.getClass());
         return modelObject;

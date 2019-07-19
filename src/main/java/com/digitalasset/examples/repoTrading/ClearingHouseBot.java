@@ -3,29 +3,19 @@
 
 package com.digitalasset.examples.repoTrading;
 
-import com.digitalasset.examples.repoTrading.model.DomainObject;
-import com.digitalasset.examples.repoTrading.model.DvP;
-import com.digitalasset.examples.repoTrading.model.NetObligation;
-import com.digitalasset.examples.repoTrading.model.RecordMapper;
-import com.digitalasset.examples.repoTrading.model.Security;
-import com.digitalasset.examples.repoTrading.model.Trade;
+import com.daml.ledger.javaapi.data.*;
 import com.digitalasset.examples.repoTrading.util.ControlServer;
 
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
-import com.daml.ledger.javaapi.data.Command;
-import com.daml.ledger.javaapi.data.ContractId;
-import com.daml.ledger.javaapi.data.DamlList;
-import com.daml.ledger.javaapi.data.Filter;
-import com.daml.ledger.javaapi.data.FiltersByParty;
-import com.daml.ledger.javaapi.data.Identifier;
-import com.daml.ledger.javaapi.data.InclusiveFilter;
-import com.daml.ledger.javaapi.data.Party;
-import com.daml.ledger.javaapi.data.Record;
-import com.daml.ledger.javaapi.data.TransactionFilter;
-import com.daml.ledger.javaapi.data.Value;
 import com.sun.net.httpserver.HttpExchange;
 import main.ccp.InitiateSettlementControl;
+import main.dvp.DvP;
+import main.netobligation.NetObligation;
+import main.netting.NettingGroup;
+import main.security.Security;
+import main.trade.NovatedTrade;
+import main.trade.Trade;
 import org.pcollections.HashTreePMap;
 import org.pcollections.HashTreePSet;
 import org.pcollections.PSet;
@@ -68,7 +58,7 @@ public class ClearingHouseBot extends RepoMarketBot {
     private int tradesNovatedCount = 0;     // Total trades novated (i.e settling today)
     private int dvpCount = 0;               // The number of dvp's that will be created
 
-    private ConcurrentHashMap<LocalDate,Set<Map.Entry<String,DomainObject>>> tradesPerDate = new ConcurrentHashMap<>();    // Count of trades per settlementDate
+    private ConcurrentHashMap<LocalDate,Set<Map.Entry<String, Template>>> tradesPerDate = new ConcurrentHashMap<>();    // Count of trades per settlementDate
 
     public ConcurrentHashMap<LocalDate,Long> getTradeCountsPerDate() {
         ConcurrentHashMap<LocalDate,Long> result = new ConcurrentHashMap<>();
@@ -125,7 +115,7 @@ public class ClearingHouseBot extends RepoMarketBot {
     private ControlServer.ControlResult handleTradeState(HttpExchange exchange) {
         StringBuilder tradeState = new StringBuilder();
 
-        for(Map.Entry<LocalDate,Set<Map.Entry<String,DomainObject>>> entry : tradesPerDate.entrySet()) {
+        for(Map.Entry<LocalDate,Set<Map.Entry<String,Template>>> entry : tradesPerDate.entrySet()) {
             tradeState.append(entry.getKey().toString()); tradeState.append(" "); tradeState.append(entry.getValue().size());
             tradeState.append("\n");
         }
@@ -133,7 +123,7 @@ public class ClearingHouseBot extends RepoMarketBot {
     }
 
     @Override
-    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    public Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         logStatus(ledgerView);
         updateTradeState(ledgerView);
@@ -156,7 +146,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      *
      * @param ledgerView - the stable ledger view
      */
-    private void logStatus(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private void logStatus(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         if (!settlementInProgress) {
             // Count trades until settlement starts
@@ -169,11 +159,11 @@ public class ClearingHouseBot extends RepoMarketBot {
         }
     }
 
-    private void updateTradeState(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private void updateTradeState(LedgerViewFlowable.LedgerView<Template> ledgerView) {
         tradesPerDate = new ConcurrentHashMap<>();
         ledgerView.getContracts(tradeTemplateId).entrySet().forEach(
             e -> tradesPerDate.computeIfAbsent(
-                ((Trade) (e.getValue())).getTradeInfo().getSettlementDate(),
+                toLocalDate(((Trade) (e.getValue())).tradeInfo.settlementDate),
                 k -> new HashSet<>()
             ).add(e));
     }
@@ -184,7 +174,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - an entry containing the contractId and the contract (A {@link com.digitalasset.examples.repoTrading.model.RecordMapper})
      * @return - a command set accepting the invite
      */
-    private CommandsAndPendingSet acceptCcpInvite(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet acceptCcpInvite(Map.Entry<String, Template> entry) {
 
         log.debug("{} accept invitation, contractId={}", getParty(), entry.getKey());
 
@@ -206,7 +196,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - an entry containing the contractId and the contract (A {@link com.digitalasset.examples.repoTrading.model.RecordMapper})
      * @return an empty command set
      */
-    private CommandsAndPendingSet saveCcpContractId(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet saveCcpContractId(Map.Entry<String, Template> entry) {
 
         if (ccpContractId == null) {
             log.debug("CCP created, contractId={}", entry.getKey());
@@ -222,14 +212,14 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - an entry containing the contractId and the contract (A {@link Trade})
      * @return a command set novating the Trade
      */
-    private CommandsAndPendingSet novateTrade(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet novateTrade(Map.Entry<String, Template> entry) {
 
         assert (entry.getValue().getClass() == Trade.class);
 
         Trade thisTrade = (Trade) entry.getValue();
         String contractId = entry.getKey();
 
-        log.debug("novate trade, tradeId={}, contractId={}", thisTrade.getTradeInfo().getTradeId(), contractId);
+        log.debug("novate trade, tradeId={}, contractId={}", thisTrade.tradeInfo.tradeId, contractId);
 
         tradesNovatedCount++;
 
@@ -249,7 +239,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param ledgerView - the ledger state
      * @return a CommandsAndPendingSet
      */
-    private Stream<CommandsAndPendingSet> startSettlementFromSentinel(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private Stream<CommandsAndPendingSet> startSettlementFromSentinel(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         Stream<CommandsAndPendingSet> commandStream = Stream.empty();
 
@@ -258,12 +248,9 @@ public class ClearingHouseBot extends RepoMarketBot {
                 !settlementInProgress
             ) {
 
-            RecordMapper sentinel =
-                (RecordMapper) new ArrayList<>(
-                    ledgerView.getContracts(initiateSettlementControlTemplateId).entrySet()
-                ).get(0).getValue();
+            InitiateSettlementControl sentinel = (InitiateSettlementControl)ledgerView.getContracts(initiateSettlementControlTemplateId).values().iterator().next();
 
-            Optional<Stream<CommandsAndPendingSet>> optionalCommandStream = startSettlement(sentinel.getDateField(1));
+            Optional<Stream<CommandsAndPendingSet>> optionalCommandStream = startSettlement(toLocalDate(sentinel.settlementDate));
 
             if(!optionalCommandStream.isPresent()) {
                 logMessage(String.format("No trades to settle on %s",settlementDate.toString()));
@@ -288,7 +275,7 @@ public class ClearingHouseBot extends RepoMarketBot {
         Optional<Stream<CommandsAndPendingSet>> maybeCommandStream = Optional.empty();
 
 
-        Set<Map.Entry<String, DomainObject>> trades = tradesPerDate.getOrDefault(sdate, new HashSet<>());
+        Set<Map.Entry<String, Template>> trades = tradesPerDate.getOrDefault(sdate, new HashSet<>());
 
         if(!trades.isEmpty()) {
 
@@ -318,7 +305,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param ledgerView - the current view of the ledger
      * @return a Stream of CommandsAndPendingSets that execute teh 'FromNettingGroups' choice
      */
-    private Stream<CommandsAndPendingSet> createNettingGroups(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private Stream<CommandsAndPendingSet> createNettingGroups(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         int novatedTradeCount = ledgerView.getContracts(novatedTradeTemplateId).size();
         log.trace(
@@ -343,9 +330,9 @@ public class ClearingHouseBot extends RepoMarketBot {
              * Filter  the novated trades by settlement date, then group by their domain key - this forms them into
              * lists that can be netted i.e trades of the same settlement date, participant, cusip and currency
              */
-            Map<String, List<Map.Entry<String, DomainObject>>> groups = ledgerView
+            Map<String, List<Map.Entry<String, Template>>> groups = ledgerView
                 .getContracts(novatedTradeTemplateId).entrySet().stream()
-                .collect(Collectors.groupingBy(entry -> entry.getValue().getDomainKey()));
+                .collect(Collectors.groupingBy(entry -> getNovatedTradeDomainKey(entry.getValue())));
 
             /*
              * Turn the groups into the right form of an argument to the FormNettingGroups choice. This transforms
@@ -372,6 +359,15 @@ public class ClearingHouseBot extends RepoMarketBot {
         return Stream.of(commands);
     }
 
+    private String getNovatedTradeDomainKey(Template t) {
+        NovatedTrade novatedTrade = (NovatedTrade)t;
+        return String.format("%s:%s:%s:%s",
+                novatedTrade.tradeInfo.settlementDate.toString(),
+                novatedTrade.participantId,
+                novatedTrade.tradeInfo.cusip,
+                novatedTrade.tradeInfo.currency);
+    }
+
     /**
      * Net out trades. A NettingGroup has been created for all nettable trades - net them out and form a NetObligationRequest
      * for confirmation by the particiant
@@ -379,14 +375,13 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - a NettingGroup contractId and value
      * @return - a command set to net the trades
      */
-    private CommandsAndPendingSet netTrades(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet netTrades(Map.Entry<String, Template> entry) {
 
-        assert (entry.getValue().getClass() == RecordMapper.class);
-        RecordMapper nettingGroup = (RecordMapper) entry.getValue();
+        NettingGroup nettingGroup = (NettingGroup) entry.getValue();
 
         String contractId = entry.getKey();
 
-        log.debug("net trades, tradeIds={}, contractId={}", nettingGroup.getListField(0), contractId);
+        log.debug("net trades, tradeIds={}, contractId={}", nettingGroup.contractList, contractId);
 
         return newCommandAndPendingSet(
             NETTING_WORKFLOW_ID,
@@ -403,7 +398,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - NetObligation and contractId
      * @return - CommandsAndPendingSet
      */
-    private CommandsAndPendingSet createDvP(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet createDvP(Map.Entry<String, Template> entry) {
 
         NetObligation netObligation = (NetObligation) entry.getValue();
 
@@ -411,14 +406,14 @@ public class ClearingHouseBot extends RepoMarketBot {
 
         log.debug("create DvP: netObligationId={}, cusip={}, receiver={}, payer={}, paymentAmount={}, quantity={}",
             contractId,
-            netObligation.getCusip(),
-            netObligation.getReceiver(),
-            netObligation.getPayer(),
-            netObligation.getPaymentAmount(),
-            netObligation.getQuantity()
+            netObligation.cusip,
+            netObligation.receiver,
+            netObligation.payer,
+            netObligation.paymentAmount,
+            netObligation.quantity
         );
 
-        String choice = netObligation.getPayer().equals(netObligation.getCcp()) ?
+        String choice = netObligation.payer.equals(netObligation.ccp) ?
             "CreateBuyDvP" : "CreateSellDvP";
 
         return newCommandAndPendingSet(
@@ -436,12 +431,12 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param entry - a DvP entry
      * @return = CommandsAndPendingSet
      */
-    private CommandsAndPendingSet settleDvp(Map.Entry<String, DomainObject> entry) {
+    private CommandsAndPendingSet settleDvp(Map.Entry<String, Template> entry) {
 
         DvP dvp = (DvP) entry.getValue();
         String contractId = entry.getKey();
 
-        log.debug("settle dvp, dvpId={}, payer={}, receiver={}", contractId, dvp.getPayer(), dvp.getReceiver());
+        log.debug("settle dvp, dvpId={}, payer={}, receiver={}", contractId, dvp.payer, dvp.receiver);
 
         return newCommandAndPendingSet(
             SETTLEMENT_WORKFLOW_ID,
@@ -490,7 +485,7 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param availableSecurities - securities available for settlement indexed by contractId
      * @return an AllocationResult
      */
-    private AllocationResult allocateSecurity(Map.Entry<String, DomainObject> entry, Map<String,Security> availableSecurities) {
+    private AllocationResult allocateSecurity(Map.Entry<String, Template> entry, Map<String, Security> availableSecurities) {
 
         AllocationResult result = new AllocationResult();
         String dvpId = entry.getKey();
@@ -501,24 +496,24 @@ public class ClearingHouseBot extends RepoMarketBot {
         BigDecimal sum = BigDecimal.ZERO;
         List<String> allocated = new ArrayList<>();
 
-        for(Iterator<Map.Entry<String,Security>> iter = availableSecurities.entrySet().iterator(); iter.hasNext() && sum.compareTo(dvp.getQuantity()) < 0;) {
+        for(Iterator<Map.Entry<String,Security>> iter = availableSecurities.entrySet().iterator(); iter.hasNext() && sum.compareTo(dvp.quantity) < 0;) {
             Map.Entry<String,Security> e = iter.next();
             String securityId = e.getKey();
             Security s = e.getValue();
-            if(s.getCusip().equals(dvp.getCusip())) {
-                sum = sum.add(s.getCollateralQuantity());
+            if(s.cusip.equals(dvp.cusip)) {
+                sum = sum.add(s.collateralQuantity);
                 allocated.add(securityId);
             }
         }
 
         log.trace("allocate securities: cusip={}, collateralQuantity={}, security sum={}",
-            dvp.getCusip(), dvp.getQuantity(), sum);
+            dvp.cusip, dvp.quantity, sum);
 
-        if(sum.compareTo(dvp.getQuantity()) >= 0) {
+        if(sum.compareTo(dvp.quantity) >= 0) {
             // We have enough securites to allocate
 
             log.debug("allocate securities: dvpId={} cusip={}, quantity={}, security sum={}, count={}",
-                dvpId, dvp.getCusip(), dvp.getQuantity(), sum, allocated.size()
+                dvpId, dvp.cusip, dvp.quantity, sum, allocated.size()
             );
 
             DamlList arg = new DamlList(
@@ -543,16 +538,16 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param ledgerView - the ledger view containing the DvPs
      * @return A command stream
      */
-    private Stream<CommandsAndPendingSet> allocateSecurities(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private Stream<CommandsAndPendingSet> allocateSecurities(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         Map<String,Security> availableSecurities = new HashMap<>();
         ledgerView.getContracts(securityTemplateId).entrySet().stream()
-            .filter(e -> ((Security)e.getValue()).getOwner().equals(getParty()))
+            .filter(e -> ((Security)e.getValue()).owner.equals(getParty()))
             .forEach(e ->  availableSecurities.put(e.getKey(),(Security) e.getValue()));
 
         AllocationResult result = new AllocationResult();
         for(
-            Iterator<Map.Entry<String,DomainObject>>iter = ledgerView.getContracts(cashAllocatedDvpTemplateId)
+            Iterator<Map.Entry<String,Template>>iter = ledgerView.getContracts(cashAllocatedDvpTemplateId)
                 .entrySet().iterator();
             iter.hasNext() && !result.isAllocated(); ) {
             result = allocateSecurity(iter.next(), availableSecurities);
@@ -568,11 +563,11 @@ public class ClearingHouseBot extends RepoMarketBot {
      * @param ledgerView - the current ledger view
      * @return a command Stream
      */
-    private Stream<CommandsAndPendingSet> finishSettlement(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private Stream<CommandsAndPendingSet> finishSettlement(LedgerViewFlowable.LedgerView<Template> ledgerView) {
 
         Stream<CommandsAndPendingSet> commandStream = Stream.empty();
         long settledDvpCount = ledgerView.getContracts(settledDvpTemplateId).entrySet().stream()
-            .filter(e -> ((DvP)e.getValue()).getSettlementDate().equals(settlementDate))
+            .filter(e -> toLocalDate(((DvP)e.getValue()).settlementDate).equals(settlementDate))
             .count();
 
         log.trace("finish settlement: nettingInProgress={}, dvpCount={}, settledDvps.count()={}",

@@ -3,7 +3,7 @@
 
 package com.digitalasset.examples.repoTrading;
 
-import com.digitalasset.examples.repoTrading.model.DomainObject;
+import com.daml.ledger.javaapi.data.*;
 import com.digitalasset.examples.repoTrading.util.Configuration;
 import com.digitalasset.examples.repoTrading.util.ModelMapper;
 
@@ -12,12 +12,6 @@ import com.daml.ledger.rxjava.components.Bot;
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.rxjava.components.helpers.CreatedContract;
-import com.daml.ledger.javaapi.data.Command;
-import com.daml.ledger.javaapi.data.ExerciseCommand;
-import com.daml.ledger.javaapi.data.Identifier;
-import com.daml.ledger.javaapi.data.Record;
-import com.daml.ledger.javaapi.data.SubmitCommandsRequest;
-import com.daml.ledger.javaapi.data.TransactionFilter;
 import io.reactivex.Flowable;
 import main.cash.Cash;
 import main.cashrequest.CashRequest;
@@ -38,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -97,17 +93,17 @@ public abstract class RepoMarketBot {
         return 0;
     }
 
-    private static DomainObject asDomainObject(CreatedContract created) {
-        return ModelMapper.domainObjectFromRecord(identifierToString(created.getTemplateId()),created.getCreateArguments());
+    private static Template asDomainObject(CreatedContract created) {
+        return ModelMapper.domainObjectFromRecord(created.getTemplateId(),created.getCreateArguments());
     }
 
-    private Flowable<CommandsAndPendingSet> runProcess(LedgerViewFlowable.LedgerView<DomainObject> ledgerView) {
+    private Flowable<CommandsAndPendingSet> runProcess(LedgerViewFlowable.LedgerView<Template> ledgerView) {
         Stream<CommandsAndPendingSet> cmdStream = process(ledgerView)
             .filter(cps -> !cps.equals(CommandsAndPendingSet.empty));
         return Flowable.fromIterable(cmdStream::iterator);
     }
 
-    public abstract Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<DomainObject> ledgerView);
+    public abstract Stream<CommandsAndPendingSet> process(LedgerViewFlowable.LedgerView<Template> ledgerView);
 
     public abstract TransactionFilter getTransactionFilter();
 
@@ -198,5 +194,9 @@ public abstract class RepoMarketBot {
 
     private static String identifierToString (Identifier identifier) {
         return identifier.getModuleName().concat(":").concat(identifier.getEntityName());
+    }
+
+    protected LocalDate toLocalDate(Instant instant) {
+        return instant.atZone(ZoneOffset.UTC).toLocalDate();
     }
 }
