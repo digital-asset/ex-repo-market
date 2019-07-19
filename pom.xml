@@ -6,63 +6,72 @@
 
     <groupId>com.daml.ledger.examples</groupId>
     <artifactId>ex-repo-trading</artifactId>
-    <version>1.0</version>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <organization>
+        <name>com.digitalasset</name>
+    </organization>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <daml-sdk.version>100.13.13</daml-sdk.version>
+        <logback.version>1.2.3</logback.version>
+        <args4j.version>2.33</args4j.version>
+        <junit.version>5.3.1</junit.version>
+        <junit.platform.version>1.3.1</junit.platform.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.daml.ledger</groupId>
-            <artifactId>bindings-java</artifactId>
-            <version>2.7.0</version>
+            <artifactId>bindings-rxjava</artifactId>
+            <version>${daml-sdk.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.digitalasset</groupId>
-            <artifactId>daml-lf-archive</artifactId>
-            <version>19.1.0</version>
+            <groupId>com.daml.java</groupId>
+            <artifactId>codegen</artifactId>
+            <version>${daml-sdk.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>${logback.version}</version>
         </dependency>
         <dependency>
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
-            <version>2.33</version>
+            <version>${args4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <version>1.3.1</version>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
-            <version>1.3.1</version>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.3.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.3.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>5.3.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -105,6 +114,44 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>compile-daml</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>daml</executable>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>-o</argument>
+                                <argument>${project.build.directory}/repomarket.dar</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>daml-codegen</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>java</goal></goals>
+                        <configuration>
+                            <mainClass>com.digitalasset.daml.lf.codegen.Main</mainClass>
+                            <sourceRoot>${project.build.directory}/generated-sources/main/java</sourceRoot>
+                            <arguments>
+                                <argument>-d</argument>
+                                <argument>main.Decoder</argument>
+                                <argument>-o</argument>
+                                <argument>${project.build.directory}/generated-sources/main/java</argument>
+                                <argument>${project.build.directory}/repomarket.dar</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

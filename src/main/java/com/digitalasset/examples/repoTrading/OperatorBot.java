@@ -5,10 +5,9 @@ package com.digitalasset.examples.repoTrading;
 
 import com.digitalasset.examples.repoTrading.model.DomainObject;
 import com.digitalasset.examples.repoTrading.util.Configuration;
-import com.digitalasset.examples.repoTrading.util.CsvFile;
 
-import com.daml.ledger.javaapi.components.LedgerViewFlowable;
-import com.daml.ledger.javaapi.components.helpers.CommandsAndPendingSet;
+import com.daml.ledger.rxjava.components.LedgerViewFlowable;
+import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.javaapi.data.CreateCommand;
 import com.daml.ledger.javaapi.data.DamlList;
 import com.daml.ledger.javaapi.data.Filter;
@@ -18,13 +17,11 @@ import com.daml.ledger.javaapi.data.InclusiveFilter;
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.javaapi.data.Record;
 import com.daml.ledger.javaapi.data.TransactionFilter;
-import org.kohsuke.args4j.Option;
+import main.genesis.Genesis;
 import org.pcollections.HashTreePMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,7 +43,7 @@ public class OperatorBot extends RepoMarketBot {
 
     OperatorBot(RepoTradingMain mainClass, String party) {
         super(mainClass, party);
-        genesisTemplateId = templateIdFor("Genesis", "Genesis");
+        genesisTemplateId = Genesis.TEMPLATE_ID;
     }
 
     @Override

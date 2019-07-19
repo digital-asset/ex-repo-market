@@ -9,8 +9,8 @@ import com.digitalasset.examples.repoTrading.model.TradeRegistrationRequest;
 import com.digitalasset.examples.repoTrading.util.ControlServer;
 import com.digitalasset.examples.repoTrading.util.CsvFile;
 
-import com.daml.ledger.javaapi.components.LedgerViewFlowable;
-import com.daml.ledger.javaapi.components.helpers.CommandsAndPendingSet;
+import com.daml.ledger.rxjava.components.LedgerViewFlowable;
+import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.javaapi.data.Command;
 import com.daml.ledger.javaapi.data.Decimal;
 import com.daml.ledger.javaapi.data.Filter;
@@ -24,6 +24,8 @@ import com.daml.ledger.javaapi.data.Text;
 import com.daml.ledger.javaapi.data.Timestamp;
 import com.daml.ledger.javaapi.data.TransactionFilter;
 import com.sun.net.httpserver.HttpExchange;
+import main.tradingparticipant.InviteTradingParticipant;
+import main.tradingparticipant.TradingParticipant;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.pcollections.HashTreePMap;
@@ -144,9 +146,9 @@ public class TradingParticipantBot extends RepoMarketBot {
 
     public TradingParticipantBot(RepoTradingMain mainClass, String party) {
         super(mainClass,party);
-        this.tradeRegistrationRequestTemplateId = templateIdFor("Trade", "TradeRegistrationRequest");
-        this.inviteTradingParticipantTemplateId = templateIdFor("TradingParticipant", "InviteTradingParticipant");
-        this.tradingParticipantTemplateId = templateIdFor("TradingParticipant", "TradingParticipant");
+        this.tradeRegistrationRequestTemplateId = main.trade.TradeRegistrationRequest.TEMPLATE_ID;
+        this.inviteTradingParticipantTemplateId = InviteTradingParticipant.TEMPLATE_ID;
+        this.tradingParticipantTemplateId = TradingParticipant.TEMPLATE_ID;
     }
 
     private ControlServer.ControlResult handleInjectTradeFile(HttpExchange exchange) {

@@ -11,8 +11,8 @@ import com.digitalasset.examples.repoTrading.model.Security;
 import com.digitalasset.examples.repoTrading.model.Trade;
 import com.digitalasset.examples.repoTrading.util.ControlServer;
 
-import com.daml.ledger.javaapi.components.LedgerViewFlowable;
-import com.daml.ledger.javaapi.components.helpers.CommandsAndPendingSet;
+import com.daml.ledger.rxjava.components.LedgerViewFlowable;
+import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.javaapi.data.Command;
 import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.DamlList;
@@ -25,6 +25,7 @@ import com.daml.ledger.javaapi.data.Record;
 import com.daml.ledger.javaapi.data.TransactionFilter;
 import com.daml.ledger.javaapi.data.Value;
 import com.sun.net.httpserver.HttpExchange;
+import main.ccp.InitiateSettlementControl;
 import org.pcollections.HashTreePMap;
 import org.pcollections.HashTreePSet;
 import org.pcollections.PSet;
@@ -47,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import main.ccp.InviteClearingHouse;
 
 public class ClearingHouseBot extends RepoMarketBot {
 
@@ -76,8 +78,8 @@ public class ClearingHouseBot extends RepoMarketBot {
 
     public ClearingHouseBot(RepoTradingMain mainClass, String party) {
         super(mainClass, party);
-        this.inviteClearingHouseTemplateId = templateIdFor("CCP", "InviteClearingHouse");
-        this.initiateSettlementControlTemplateId = templateIdFor("CCP", "InitiateSettlementControl");
+        this.inviteClearingHouseTemplateId = InviteClearingHouse.TEMPLATE_ID;
+        this.initiateSettlementControlTemplateId = InitiateSettlementControl.TEMPLATE_ID;
     }
 
     @Override

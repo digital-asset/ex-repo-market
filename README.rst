@@ -37,8 +37,10 @@ Prequisites:
 * You have created the example project as detailed above
 
 1. Open a terminal window
-2. Change to the example folder: ``cd repo-market`` 
-3. Run the command ``./scrips/start.sh``. 
+2. Change to the example folder: ``cd repo-market``
+3. Run ``daml start``
+4. Open a new terminal window and change to the example folder
+5. Run the command ``./scrips/start.sh``.
 
 .. code-block:: bash
 

@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 BASE=$(dirname $0)/..
-VERSION=1.0
-JAR=${BASE}/lib/ex-repo-trading-${VERSION}.jar
+VERSION=0.0.1-SNAPSHOT
+JAR=${BASE}/target/ex-repo-trading-${VERSION}.jar
 
 run() {
  java -jar -Dlogback.configurationFile=logback.xml $JAR  $@ &
@@ -13,8 +13,14 @@ run() {
 
 stop () {
   printf "\nstopping participants...\n"
-  kill `ps -ae|grep ex-repo-trading-.*\.jar|grep -v grep|awk '{print $1}'`
-  da stop
+  os="$(uname -s)"
+  if [ "$os" == "Linux" ]
+  then
+    psSwitch=ae
+  else
+    psSwitch="-ae"
+  fi
+  kill $(ps $psSwitch|grep "ex-repo-trading-.*\.jar"|grep -v grep|awk '{print $1}')
   state=stop
 }
 
@@ -39,8 +45,6 @@ done
 TRADE_FILE=${1:-data/Trades12-2018-06-28.csv}
 
 rm -f $BASE/logs/apps.log
-
-da stop; da start
 
 for p in `sed -n -e '/tradingParties/,$p' config.yaml|awk '/name:/ { print $3 }'`
 do

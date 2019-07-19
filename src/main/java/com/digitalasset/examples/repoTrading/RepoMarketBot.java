@@ -7,19 +7,31 @@ import com.digitalasset.examples.repoTrading.model.DomainObject;
 import com.digitalasset.examples.repoTrading.util.Configuration;
 import com.digitalasset.examples.repoTrading.util.ModelMapper;
 
-import com.daml.ledger.javaapi.DamlLedgerClient;
-import com.daml.ledger.javaapi.components.Bot;
-import com.daml.ledger.javaapi.components.LedgerViewFlowable;
-import com.daml.ledger.javaapi.components.helpers.CommandsAndPendingSet;
-import com.daml.ledger.javaapi.components.helpers.CreatedContract;
+import com.daml.ledger.rxjava.DamlLedgerClient;
+import com.daml.ledger.rxjava.components.Bot;
+import com.daml.ledger.rxjava.components.LedgerViewFlowable;
+import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
+import com.daml.ledger.rxjava.components.helpers.CreatedContract;
 import com.daml.ledger.javaapi.data.Command;
 import com.daml.ledger.javaapi.data.ExerciseCommand;
 import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.Record;
 import com.daml.ledger.javaapi.data.SubmitCommandsRequest;
 import com.daml.ledger.javaapi.data.TransactionFilter;
-import com.google.protobuf.Timestamp;
 import io.reactivex.Flowable;
+import main.cash.Cash;
+import main.cashrequest.CashRequest;
+import main.ccp.CCP;
+import main.dvp.AllocatedDvP;
+import main.dvp.CashAllocatedDvP;
+import main.dvp.DvP;
+import main.dvp.SettledDvP;
+import main.netobligation.NetObligation;
+import main.netobligation.NetObligationRequest;
+import main.netting.NettingGroup;
+import main.security.Security;
+import main.trade.NovatedTrade;
+import main.trade.Trade;
 import org.pcollections.PMap;
 import org.pcollections.PSet;
 import org.slf4j.Logger;
@@ -64,19 +76,19 @@ public abstract class RepoMarketBot {
         this.mainClass = mainClass;
         this.party = party;
 
-        this.ccpTemplateId = templateIdFor("CCP", "CCP");
-        this.tradeTemplateId = templateIdFor("Trade", "Trade");
-        this.cashRequestTemplateId = templateIdFor("CashRequest", "CashRequest");
-        this.novatedTradeTemplateId = templateIdFor("Trade", "NovatedTrade");
-        this.nettingGroupTemplateId = templateIdFor("Netting", "NettingGroup");
-        this.netObligationRequestTemplateId = templateIdFor("NetObligation", "NetObligationRequest");
-        this.netObligationTemplateId = templateIdFor("NetObligation", "NetObligation");
-        this.dvpTemplateId = templateIdFor("DvP", "DvP");
-        this.cashAllocatedDvpTemplateId = templateIdFor("DvP", "CashAllocatedDvP");
-        this.allocatedDvpTemplateId = templateIdFor("DvP", "AllocatedDvP");
-        this.settledDvpTemplateId = templateIdFor("DvP", "SettledDvP");
-        this.cashTemplateId = templateIdFor("Cash", "Cash");
-        this.securityTemplateId = templateIdFor("Security", "Security");
+        this.ccpTemplateId = CCP.TEMPLATE_ID;
+        this.tradeTemplateId = Trade.TEMPLATE_ID;
+        this.cashRequestTemplateId = CashRequest.TEMPLATE_ID;
+        this.novatedTradeTemplateId = NovatedTrade.TEMPLATE_ID;
+        this.nettingGroupTemplateId = NettingGroup.TEMPLATE_ID;
+        this.netObligationRequestTemplateId = NetObligationRequest.TEMPLATE_ID;
+        this.netObligationTemplateId = NetObligation.TEMPLATE_ID;
+        this.dvpTemplateId = DvP.TEMPLATE_ID;
+        this.cashAllocatedDvpTemplateId = CashAllocatedDvP.TEMPLATE_ID;
+        this.allocatedDvpTemplateId = AllocatedDvP.TEMPLATE_ID;
+        this.settledDvpTemplateId = SettledDvP.TEMPLATE_ID;
+        this.cashTemplateId = Cash.TEMPLATE_ID;
+        this.securityTemplateId = Security.TEMPLATE_ID;
     }
 
     public int run(String [] args) throws java.io.IOException {
@@ -114,8 +126,8 @@ public abstract class RepoMarketBot {
             RepoTradingMain.APP_ID,
             UUID.randomUUID().toString(),
             this.party,
-            Timestamp.newBuilder().setSeconds(Instant.EPOCH.toEpochMilli() / 1000).build(),
-            Timestamp.newBuilder().setSeconds(Instant.EPOCH.plusSeconds(10).toEpochMilli() / 1000).build(),
+            Instant.EPOCH,
+            Instant.EPOCH.plusSeconds(10),
             commandList);
         return new CommandsAndPendingSet(commands, pendingSet);
     }
@@ -138,14 +150,10 @@ public abstract class RepoMarketBot {
         getClient().getCommandSubmissionClient().submit(
             workflowId, RepoTradingMain.APP_ID,
             commandId, getParty(),
-            Timestamp.newBuilder().setSeconds(Instant.EPOCH.toEpochMilli() / 1000).build(),
-            Timestamp.newBuilder().setSeconds(Instant.EPOCH.plusSeconds(5).toEpochMilli() / 1000).build(),
+            Instant.EPOCH,
+            Instant.EPOCH.plusSeconds(5),
             commands
         ).blockingGet();
-    }
-
-    Identifier templateIdFor(String subModule, String templateName) {
-        return new Identifier(getPackageId(),"Main."+subModule,templateName);
     }
 
     void logMessage(String message) {
@@ -166,10 +174,6 @@ public abstract class RepoMarketBot {
 
     public void setParty(String party) {
         this.party = party;
-    }
-
-    private String getPackageId() {
-        return mainClass.getPackageId();
     }
 
     String getOperatorName() {

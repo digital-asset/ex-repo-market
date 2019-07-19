@@ -10,6 +10,7 @@ import com.daml.ledger.javaapi.data.Timestamp;
 import com.daml.ledger.javaapi.data.Value;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -84,7 +85,7 @@ public class RecordMapper implements DomainObject {
             .isValue();
     }
 
-    public long getTimestampField(int index) {
+    public Instant getTimestampField(int index) {
         Value v = fieldAt(index).getValue();
         return v.asTimestamp()
             .orElseThrow(ModelMappingException.badType(v, index,"Timestamp"))
@@ -121,6 +122,6 @@ public class RecordMapper implements DomainObject {
      * a long of microseconds since the epoch, so just divide by microseconds per day
      */
     private long toEpochDay(Timestamp timestamp) {
-        return timestamp.getValue() / MICRO_SEC_PER_DAY;
+        return timestamp.getValue().toEpochMilli() * 1000 / MICRO_SEC_PER_DAY;
     }
 }

@@ -4,9 +4,8 @@
 package com.digitalasset.examples.repoTrading;
 
 import com.digitalasset.examples.repoTrading.util.Configuration;
-import com.digitalasset.examples.repoTrading.util.LedgerPackages;
 
-import com.daml.ledger.javaapi.DamlLedgerClient;
+import com.daml.ledger.rxjava.DamlLedgerClient;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -48,7 +47,7 @@ public class RepoTradingMain {
     private String host = "localhost";
 
     @Option(name = "--port", aliases = {"-p"}, metaVar = "PORT", usage = "port to connect to")
-    private int port = 7600;
+    private int port = 6865;
 
     @Option(name = "--config", aliases = {"-c"}, metaVar = "CONFIG FILE", usage = "configuration file to load")
     private File configFile = new File("config.yaml");
@@ -57,7 +56,6 @@ public class RepoTradingMain {
     private String command = null;
 
     private String ledgerId;
-    private String packageId;
 
     private DamlLedgerClient client;
 
@@ -96,7 +94,6 @@ public class RepoTradingMain {
         client.connect();
 
         ledgerId = client.getLedgerId();
-        packageId = new LedgerPackages(client).packageIdFor("Genesis");
 
         RepoMarketBot myBot = null;
 
@@ -178,10 +175,6 @@ public class RepoTradingMain {
 
     public DamlLedgerClient getClient() {
         return client;
-    }
-
-    public String getPackageId() {
-        return packageId;
     }
 
     public String getOperatorName() {

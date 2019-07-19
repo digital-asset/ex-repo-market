@@ -5,13 +5,14 @@ package com.digitalasset.examples.repoTrading;
 
 import com.digitalasset.examples.repoTrading.model.DomainObject;
 
-import com.daml.ledger.javaapi.components.LedgerViewFlowable;
-import com.daml.ledger.javaapi.components.helpers.CommandsAndPendingSet;
+import com.daml.ledger.rxjava.components.LedgerViewFlowable;
+import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.javaapi.data.Filter;
 import com.daml.ledger.javaapi.data.FiltersByParty;
 import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.InclusiveFilter;
 import com.daml.ledger.javaapi.data.TransactionFilter;
+import main.ccp.CCPInvite;
 import org.pcollections.HashTreePMap;
 import org.pcollections.HashTreePSet;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class PaymentProcessorBot extends RepoMarketBot {
 
     public PaymentProcessorBot(RepoTradingMain mainClass, String party) {
         super(mainClass, party);
-        this.ccpInviteTemplateId = templateIdFor("CCP", "CCPInvite");
+        this.ccpInviteTemplateId = CCPInvite.TEMPLATE_ID;
     }
 
     @Override

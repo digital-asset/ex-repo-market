@@ -15,3 +15,4 @@ navigator.history
 .idea/
 **/.DS_Store
 .vscode/settings.json
+.daml
