@@ -1,0 +1,142 @@
+#
+# Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: 2.1
+
+executors:
+  daml-executor:
+    docker:
+      - image: circleci/openjdk:11.0-jdk
+  docker_buildpack:
+    docker:
+      - image: circleci/buildpack-deps:xenial
+
+only-release-tags: &only-release-tags
+  filters:
+    tags:
+      only: /^v.*/
+    branches:
+      ignore: /.*/
+
+
+commands:
+  install_sdk:
+    description: "Install the DAML SDK"
+    parameters:
+      version:
+        type: string
+    steps:
+      - run:
+          command: |
+            cd ${HOME}
+            wget https://github.com/digital-asset/daml/releases/download/v<< parameters.version >>/daml-sdk-<< parameters.version >>-linux.tar.gz
+            tar -zxvf daml-sdk-<< parameters.version >>-linux.tar.gz
+            cd sdk-<< parameters.version >>
+            ./install.sh
+            cd ${HOME}
+            rm -rf sdk-<< parameters.version >>
+
+jobs:
+  mvn_test:
+    parameters:
+      daml_sdk_version:
+        type: string
+    executor: daml-executor
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - m2-{{ checksum "pom.xml" }}-{{ checksum "daml.yaml" }}
+            - m2
+      - install_sdk:
+          version: << parameters.daml_sdk_version >>
+      - run:
+          command: |
+            export PATH=${HOME}/.daml/bin:${PATH}
+            mvn verify
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.daml
+          key: m2-{{ checksum "pom.xml" }}-{{ checksum "daml.yaml" }}
+      - store_test_results:
+          path: target/surefire-reports
+      - store_artifacts:
+          path: target/surefire-reports
+      - run:
+          name: Run Blackduck Detect
+          command: |
+            bash <(curl -s https://raw.githubusercontent.com/DACH-NY/security-blackduck/master/synopsys-detect) ci-build digitalasset_ex-repo-market master --logging.level.com.synopsys.integration=DEBUG --detect.notices.report=true
+      - run:
+          command: cp digitalasset_ex_repo_market_master_Black_Duck_Notices_Report.txt target/NOTICE
+      - persist_to_workspace:
+          root: target
+          paths:
+            - "*.jar"
+            - "*.dar"
+            - "lib"
+            - "NOTICE"
+
+  daml_test:
+    parameters:
+      daml_sdk_version:
+        type: string
+    executor: daml-executor
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - daml-{{ checksum "daml.yaml" }}
+      - install_sdk:
+          version: << parameters.daml_sdk_version >>
+      - run:
+          command: |
+            export PATH=${HOME}/.daml/bin:${PATH}
+            daml build -o target/repomarket.dar
+            daml test --junit target/daml-test-reports/daml-test.xml --files src/main/daml/RepoMarketTests.daml
+      - save_cache:
+          paths:
+            - ~/.daml
+          key: daml-{{ checksum "daml.yaml" }}
+      - store_test_results:
+          path: target/daml-test-reports
+      - store_artifacts:
+          path: target/daml-test-reports
+
+  github_release:
+    executor: docker_buildpack
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Push a new github release
+          command: |
+            ./scripts/release.sh ex-repo-issuance
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - daml_test:
+          daml_sdk_version: "0.13.12"
+      - mvn_test:
+          daml_sdk_version: "0.13.12"
+          context: blackduck
+  build_and_release:
+    jobs:
+      - daml_test:
+          <<: *only-release-tags
+          daml_sdk_version: "0.13.12"
+      - mvn_test:
+          <<: *only-release-tags
+          daml_sdk_version: "0.13.12"
+          context: blackduck
+      - github_release:
+          context: github-refapp-repo-context
+          requires:
+            - daml_test
+            - mvn_test
+          <<: *only-release-tags

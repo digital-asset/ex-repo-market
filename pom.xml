@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+    SPDX-License-Identifier: Apache-2.0
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -94,6 +100,26 @@
                         </manifest>
                     </archive>
                 </configuration>
+                <executions>
+                    <!-- create a jar without the version number, for easier Dockerfile  -->
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>ex-repo-market</finalName>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                    <classpathPrefix>lib</classpathPrefix>
+                                    <mainClass>com.digitalasset.refapps.bondissuance.Main</mainClass>
+                                </manifest>
+                            </archive>
+                            <classifier>docker</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -150,6 +176,71 @@
                                 <argument>${project.build.directory}/repomarket.dar</argument>
                             </arguments>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- add license headers to every source file -->
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <header>src/license/header.txt</header>
+                    <excludes>
+                        <exclude>**/README</exclude>
+                        <exclude>*.log</exclude>
+                        <exclude>LICENSE</exclude>
+                        <exclude>src/license/*</exclude>
+                        <exclude>ui-backend.conf</exclude>
+                        <exclude>*.hi*</exclude>
+                        <exclude>*.rst</exclude>
+                    </excludes>
+                    <mapping>
+                        <daml>DOUBLEDASHES_STYLE</daml>
+                        <Dockerfile-bots>SCRIPT_STYLE</Dockerfile-bots>
+                        <Dockerfile-sandbox>SCRIPT_STYLE</Dockerfile-sandbox>
+                        <Dockerfile-navigator>SCRIPT_STYLE</Dockerfile-navigator>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>format</goal>
+                            <goal>remove</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.coveo</groupId>
+                <artifactId>fmt-maven-plugin</artifactId>
+                <version>2.8</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

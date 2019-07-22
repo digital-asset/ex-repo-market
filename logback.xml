@@ -1,8 +1,9 @@
-<!-- 
-Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
-SPDX-License-Identifier: Apache-2.0
- -->
- 
+<!--
+
+    Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+    SPDX-License-Identifier: Apache-2.0
+
+-->
 <configuration>
     <!--<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">-->
         <!--&lt;!&ndash; deny all events with a level below WARN, that is INFO, TRACE and DEBUG &ndash;&gt;-->

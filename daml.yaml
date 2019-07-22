@@ -6,7 +6,6 @@
 sdk-version: 0.13.13
 name: ex-repo-market
 source: src/main/daml/RepoMarket.daml
-#scenario: DA.RefApps.Bond.Test.MarketSetup:testMarketSetup
 parties:
   - Citi
   - Barclays
