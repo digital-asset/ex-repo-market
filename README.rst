@@ -20,17 +20,20 @@ A `Repo Trading Model <docs/repo-trading-model.rst>`_
 Building the example
 --------------------
 
-Prequisites:
+Prerequisites:
 
-* You have Maven and Make installed and available
+* You have Maven and DAML SDK installed installed and available
 
 1. Open a terminal window and change to the root directory of the repository
-2. Type ``make build``. This creates the application JAR in the ``lib`` folder
+2. Type ``mvn clean package``. This creates the application DAR and JAR in the ``target`` folder
 
 Running the example
 -------------------
 
-Prequisites:
+Running with JVM
+~~~~~~~~~~~~~~~~
+
+Prerequisites:
 
 * You have a Java 8 JRE installed, with `java` on your PATH
 * You have the DAML SDK installed
@@ -58,7 +61,23 @@ The script will start a Sandbox and Navigator, and run all automation processes 
 
 The trades in the given trade file will load, and the system will pause, waiting for a command.
 
-Stop the system at any time by typing the interrupt character (Cntl-C) in the terminal window.
+Stop the system at any time by typing the interrupt character (Cntl-C) in the terminal windows.
+
+Running with docker
+~~~~~~~~~~~~~~~~~~~
+
+Prerequisites:
+* You have Docker and Docker-Compose installed
+
+1. Open a terminal window
+2. Change to the example folder: ``cd repo-market``
+3. Run the following docker-compose command:
+
+.. code-block:: bash
+
+  $ docker-compose up --build
+
+This will start all the components in docker containers and once the loaded you can access the application by browsing to http://localhost:7500/.
 
 Controlling the application
 ---------------------------

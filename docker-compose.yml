@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+services:
+  ex-repo-market-sandbox:
+    image: digitalasset/ex-repo-market-sandbox:0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile-sandbox
+    ports:
+      - "7600:7600"
+  ex-repo-market-navigator:
+    image: digitalasset/ex-repo-market:0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile-navigator
+    depends_on:
+      - "ex-repo-market-sandbox"
+    ports:
+      - "7500:7500"
+    environment:
+      - SANDBOX_HOST=ex-repo-market-sandbox
+      - SANDBOX_PORT=7600
+  ex-repo-market-bots:
+    image: digitalasset/ex-repo-market-bots:0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile-bots
+    depends_on:
+      - "ex-repo-market-sandbox"
+    ports:
+      - "9000-9004:9000-9004"
+    environment:
+      - SANDBOX_HOST=ex-repo-market-sandbox
+      - SANDBOX_PORT=7600

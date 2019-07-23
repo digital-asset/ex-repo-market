@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM openjdk:8-jre-alpine
+
+WORKDIR /home/sdk
+
+COPY target/ex-repo-market-docker.jar ex-repo-market.jar
+COPY target/lib/* /home/sdk/lib/
+COPY data/* data/
+COPY config.yaml .
+
+EXPOSE 9000
+EXPOSE 9001
+EXPOSE 9002
+EXPOSE 9003
+EXPOSE 9004
+
+ENTRYPOINT java -jar ex-repo-market.jar -h ${SANDBOX_HOST} -p ${SANDBOX_PORT} all data/Trades12-2018-06-28.csv

@@ -29,7 +29,7 @@ public class RepoTradingMain {
   private static final Logger log = LoggerFactory.getLogger(RepoTradingMain.class);
 
   private static List<String> COMMAND_VERBS =
-      Arrays.asList("operator", "ccp", "paymentProcessor", "tradingParticipant");
+      Arrays.asList("operator", "ccp", "paymentProcessor", "tradingParticipant", "all");
 
   // Party names
 
@@ -69,8 +69,8 @@ public class RepoTradingMain {
       required = true,
       metaVar = "COMMAND",
       usage =
-          "the type of bot to run: one of 'operator', 'ccp', 'paymentProcessor', or 'tradingParticipant'")
-  private String command = null;
+          "the type of bot to run: one of 'operator', 'ccp', 'paymentProcessor', or 'tradingParticipant' or 'all'")
+  private String command = "all";
 
   private String ledgerId;
 
@@ -85,8 +85,9 @@ public class RepoTradingMain {
     try {
       // Run the main class and wait for termination
       exitCode = new RepoTradingMain().run(args);
-    } catch (java.io.IOException e) {
-      System.err.printf("Exception starting market: %s\n", e);
+    } catch (Exception e) {
+      System.err.printf("Exception starting market");
+      e.printStackTrace();
       System.exit(10);
     }
     if (exitCode == 0) {
@@ -95,7 +96,7 @@ public class RepoTradingMain {
     System.exit(exitCode);
   }
 
-  private int run(String args[]) throws java.io.IOException {
+  private int run(String args[]) throws Exception {
 
     // Args4j won't parse the full command line wth options for both program and command - so split
     // them apart
@@ -113,31 +114,51 @@ public class RepoTradingMain {
 
     ledgerId = client.getLedgerId();
 
-    RepoMarketBot myBot = null;
+    if (command.equals("all")) {
+      String[] tradingBotArgs = new String[botArgs.length + 1];
+      System.arraycopy(botArgs, 0, tradingBotArgs, 1, botArgs.length);
 
-    switch (command) {
-      case "operator":
-        myBot = new OperatorBot(this, getOperatorName());
-        break;
+      System.out.println("Starting all bots defined in the config file");
+      for (String party : configuration.getTradingParties().keySet()) {
+        tradingBotArgs[0] = party;
+        new TradingParticipantBot(this, null).run(tradingBotArgs);
+      }
+      new OperatorBot(this, getOperatorName()).run(new String[0]);
+      new ClearingHouseBot(this, getCcpName()).run(new String[0]);
+      new PaymentProcessorBot(this, getPaymentProcessorName()).run(new String[0]);
 
-      case "ccp":
-        myBot = new ClearingHouseBot(this, getCcpName());
-        break;
+      System.out.println("Welcome to Repo Market Application!");
+      System.out.println("Press Ctrl+C to shut down the program.");
 
-      case "paymentProcessor":
-        myBot = new PaymentProcessorBot(this, getPaymentProcessorName());
-        break;
+      Thread.currentThread().join();
+      return 0;
+    } else {
+      RepoMarketBot myBot = null;
 
-      case "tradingParticipant":
-        myBot = new TradingParticipantBot(this, null);
-        break;
+      switch (command) {
+        case "operator":
+          myBot = new OperatorBot(this, getOperatorName());
+          break;
+
+        case "ccp":
+          myBot = new ClearingHouseBot(this, getCcpName());
+          break;
+
+        case "paymentProcessor":
+          myBot = new PaymentProcessorBot(this, getPaymentProcessorName());
+          break;
+
+        case "tradingParticipant":
+          myBot = new TradingParticipantBot(this, null);
+          break;
+      }
+
+      if (myBot == null) {
+        logError(command, "unknown command");
+        return 2;
+      }
+      return myBot.run(botArgs);
     }
-
-    if (myBot == null) {
-      logError(command, "unknown command");
-      return 2;
-    }
-    return myBot.run(botArgs);
   }
 
   private static void waitForTermination() {
