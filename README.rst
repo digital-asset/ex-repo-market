@@ -77,7 +77,7 @@ Prerequisites:
 
   $ docker-compose up --build
 
-This will start all the components in docker containers and once the loaded you can access the application by browsing to http://localhost:7500/.
+This will start all the components in docker containers and once they loaded you can access the application by browsing to http://localhost:7500/.
 
 Controlling the application
 ---------------------------
