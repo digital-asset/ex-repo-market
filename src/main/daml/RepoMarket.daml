@@ -20,3 +20,7 @@ import Main.SecurityRequest()
 import Main.CashRequest()
 import Main.PaymentProcessor()
 import Main.CCP()
+
+-- empty scenario for RepoTradingIT
+empty = scenario do
+  return ()

@@ -16,3 +16,4 @@ navigator.history
 **/.DS_Store
 .vscode/settings.json
 .daml
+*.log

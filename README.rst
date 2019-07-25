@@ -107,6 +107,9 @@ At the command promt, type ``./scripts/listTrades.sh``. The response will be a l
 Start settlement for a given date
 #################################
 
+Using script
+~~~~~~~~~~~~
+
 At the command prompt, type ``./scripts/doSettlement.sh <date>``, where ``<date>`` is the settlement date. This should be of teh form ``YYYY-MM-DD``, as returned from the ``listTrades.sh`` command.
 
 The system will then proceed to settlement, and log output to the terminal. The output will appear as in the figure below.
@@ -121,6 +124,15 @@ Trade files may contain trades with different settlement dates, and the system w
 
   $ ./scripts/doSettlement.sh 2018-06-28
   Settled
+
+Using Navigator
+~~~~~~~~~~~~~~~
+
+1. Log in as ``CCP``
+2. Select the ``CCP Role`` tab.
+3. Select the contract
+4. Exercise the choice ``InitiateSettlement`` with the given date (2018-06-28)
+
 
 Load another trade file
 #######################

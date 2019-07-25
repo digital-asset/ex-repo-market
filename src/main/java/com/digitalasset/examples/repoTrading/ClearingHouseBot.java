@@ -27,7 +27,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import main.ccp.InitiateSettlementControl;
 import main.ccp.InviteClearingHouse;
-import main.dvp.DvP;
+import main.dvp.AllocatedDvP;
+import main.dvp.CashAllocatedDvP;
+import main.dvp.SettledDvP;
 import main.netobligation.NetObligation;
 import main.netting.NettingGroup;
 import main.security.Security;
@@ -463,7 +465,7 @@ public class ClearingHouseBot extends RepoMarketBot {
    */
   private CommandsAndPendingSet settleDvp(Map.Entry<String, Template> entry) {
 
-    DvP dvp = (DvP) entry.getValue();
+    AllocatedDvP dvp = (AllocatedDvP) entry.getValue();
     String contractId = entry.getKey();
 
     log.debug("settle dvp, dvpId={}, payer={}, receiver={}", contractId, dvp.payer, dvp.receiver);
@@ -517,7 +519,7 @@ public class ClearingHouseBot extends RepoMarketBot {
 
     AllocationResult result = new AllocationResult();
     String dvpId = entry.getKey();
-    DvP dvp = (DvP) entry.getValue();
+    CashAllocatedDvP dvp = (CashAllocatedDvP) entry.getValue();
 
     // If we have enough securities to settle....
 
@@ -606,7 +608,8 @@ public class ClearingHouseBot extends RepoMarketBot {
     Stream<CommandsAndPendingSet> commandStream = Stream.empty();
     long settledDvpCount =
         ledgerView.getContracts(settledDvpTemplateId).entrySet().stream()
-            .filter(e -> toLocalDate(((DvP) e.getValue()).settlementDate).equals(settlementDate))
+            .filter(
+                e -> toLocalDate(((SettledDvP) e.getValue()).settlementDate).equals(settlementDate))
             .count();
 
     log.trace(

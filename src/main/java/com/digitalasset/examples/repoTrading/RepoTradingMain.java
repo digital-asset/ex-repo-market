@@ -107,12 +107,19 @@ public class RepoTradingMain {
 
     if (!parseArguments(this, cmdArgs)) return 1;
 
+    DamlLedgerClient ledgerClient =
+        DamlLedgerClient.forHostWithLedgerIdDiscovery(host, port, Optional.empty());
+    waitForSandbox(ledgerClient, host, port);
+
+    return startBots(ledgerClient, botArgs);
+  }
+
+  public int startBots(DamlLedgerClient ledgerClient, String[] botArgs) throws Exception {
+    this.client = ledgerClient;
+
     configuration = new Configuration(configFile);
 
-    client = DamlLedgerClient.forHostWithLedgerIdDiscovery(host, port, Optional.empty());
-    client.connect();
-
-    ledgerId = client.getLedgerId();
+    ledgerId = ledgerClient.getLedgerId();
 
     if (command.equals("all")) {
       String[] tradingBotArgs = new String[botArgs.length + 1];
@@ -127,10 +134,6 @@ public class RepoTradingMain {
       new ClearingHouseBot(this, getCcpName()).run(new String[0]);
       new PaymentProcessorBot(this, getPaymentProcessorName()).run(new String[0]);
 
-      System.out.println("Welcome to Repo Market Application!");
-      System.out.println("Press Ctrl+C to shut down the program.");
-
-      Thread.currentThread().join();
       return 0;
     } else {
       RepoMarketBot myBot = null;
@@ -244,5 +247,22 @@ public class RepoTradingMain {
   private static synchronized void commandMessage(
       PrintStream stream, String command, String message) {
     stream.println(command + ": " + message);
+  }
+
+  private static void waitForSandbox(DamlLedgerClient client, String host, int port) {
+    boolean connected = false;
+    while (!connected) {
+      try {
+        client.connect();
+        connected = true;
+      } catch (Exception ignored) {
+        System.out.println(String.format("Connecting to sandbox at %s:%s", host, port));
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ignored2) {
+        }
+      }
+    }
+    System.out.println(String.format("Connected to sandbox at %s:%s", host, port));
   }
 }
