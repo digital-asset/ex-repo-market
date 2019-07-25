@@ -4,9 +4,11 @@
  */
 package com.digitalasset.examples.repoTrading;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.Party;
+import com.daml.ledger.javaapi.data.Value;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
@@ -14,6 +16,10 @@ import com.digitalasset.testing.utils.ContractWithId;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
@@ -95,21 +101,34 @@ public class RepoTradingIT {
             CCP_PARTY.getValue(),
             ContractArchived.apply("Main.CCP.InitiateSettlementControl", isControlCid.contractId));
 
-    ContractWithId<SettledDvP.ContractId> dvp1 =
-        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
-    assertEquals(
-        8550000L, SettledDvP.fromValue(dvp1.record).paymentAmount.toBigInteger().longValue());
-    ContractWithId<SettledDvP.ContractId> dvp2 =
-        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
-    assertEquals(
-        5700000L, SettledDvP.fromValue(dvp2.record).paymentAmount.toBigInteger().longValue());
-    ContractWithId<SettledDvP.ContractId> dvp3 =
-        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
-    assertEquals(
-        4512500L, SettledDvP.fromValue(dvp3.record).paymentAmount.toBigInteger().longValue());
-    ContractWithId<SettledDvP.ContractId> dvp4 =
-        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
-    assertEquals(
-        9737500L, SettledDvP.fromValue(dvp4.record).paymentAmount.toBigInteger().longValue());
+    List<SettledDvP> settledDvPs =
+        fetchContracts(
+            CCP_PARTY,
+            SettledDvP.TEMPLATE_ID,
+            4,
+            SettledDvP.ContractId::new,
+            SettledDvP::fromValue);
+    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 8550000L);
+    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 5700000L);
+    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 4512500L);
+    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 9737500L);
+  }
+
+  private <Cid, Contract> List<Contract> fetchContracts(
+      Party party,
+      Identifier id,
+      int count,
+      Function<String, Cid> idFactory,
+      Function<Value, Contract> ctor) {
+    ArrayList<Contract> result = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      ContractWithId<Cid> contractWithId = sandbox.getMatchedContract(party, id, idFactory);
+      result.add(ctor.apply(contractWithId.record));
+    }
+    return result;
+  }
+
+  private <C> void assertExists(List<C> list, Predicate<C> predicate) {
+    assertTrue(list.stream().anyMatch(predicate));
   }
 }
