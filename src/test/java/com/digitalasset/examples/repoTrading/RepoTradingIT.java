@@ -4,15 +4,19 @@
  */
 package com.digitalasset.examples.repoTrading;
 
+import static org.junit.Assert.assertEquals;
+
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
+import com.digitalasset.testing.utils.ContractWithId;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
+import main.dvp.SettledDvP;
 import main.trade.Trade;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -90,5 +94,22 @@ public class RepoTradingIT {
         .observeEvent(
             CCP_PARTY.getValue(),
             ContractArchived.apply("Main.CCP.InitiateSettlementControl", isControlCid.contractId));
+
+    ContractWithId<SettledDvP.ContractId> dvp1 =
+        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
+    assertEquals(
+        8550000L, SettledDvP.fromValue(dvp1.record).paymentAmount.toBigInteger().longValue());
+    ContractWithId<SettledDvP.ContractId> dvp2 =
+        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
+    assertEquals(
+        5700000L, SettledDvP.fromValue(dvp2.record).paymentAmount.toBigInteger().longValue());
+    ContractWithId<SettledDvP.ContractId> dvp3 =
+        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
+    assertEquals(
+        4512500L, SettledDvP.fromValue(dvp3.record).paymentAmount.toBigInteger().longValue());
+    ContractWithId<SettledDvP.ContractId> dvp4 =
+        sandbox.getMatchedContract(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP.ContractId::new);
+    assertEquals(
+        9737500L, SettledDvP.fromValue(dvp4.record).paymentAmount.toBigInteger().longValue());
   }
 }
