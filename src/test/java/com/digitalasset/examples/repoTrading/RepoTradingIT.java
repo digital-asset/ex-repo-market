@@ -98,11 +98,15 @@ public class RepoTradingIT {
             CCP_PARTY.getValue(),
             ContractArchived.apply("Main.CCP:InitiateSettlementControl", isControlCid.contractId));
 
-    assertTrue(sandbox.observeMatchingContracts(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP::fromValue, true,
+    assertTrue(
+        sandbox.observeMatchingContracts(
+            CCP_PARTY,
+            SettledDvP.TEMPLATE_ID,
+            SettledDvP::fromValue,
+            true,
             dvp -> dvp.paymentAmount.toBigInteger().longValue() == 8550000L,
             dvp -> dvp.paymentAmount.toBigInteger().longValue() == 5700000L,
             dvp -> dvp.paymentAmount.toBigInteger().longValue() == 4512500L,
             dvp -> dvp.paymentAmount.toBigInteger().longValue() == 9737500L));
   }
-
 }
