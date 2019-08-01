@@ -6,20 +6,13 @@ package com.digitalasset.examples.repoTrading;
 
 import static org.junit.Assert.assertTrue;
 
-import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.Party;
-import com.daml.ledger.javaapi.data.Value;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
-import com.digitalasset.testing.utils.ContractWithId;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
@@ -28,8 +21,12 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RepoTradingIT {
+  private static final Logger log = LoggerFactory.getLogger(RepoTradingIT.class);
+
   private static final Path RELATIVE_DAR_PATH = Paths.get("./target/ex-repo-market.dar");
   private static final String TEST_MODULE = "RepoMarket";
   private static final String TEST_SCENARIO = "empty";
@@ -99,36 +96,13 @@ public class RepoTradingIT {
         .getLedgerAdapter()
         .observeEvent(
             CCP_PARTY.getValue(),
-            ContractArchived.apply("Main.CCP.InitiateSettlementControl", isControlCid.contractId));
+            ContractArchived.apply("Main.CCP:InitiateSettlementControl", isControlCid.contractId));
 
-    List<SettledDvP> settledDvPs =
-        fetchContracts(
-            CCP_PARTY,
-            SettledDvP.TEMPLATE_ID,
-            4,
-            SettledDvP.ContractId::new,
-            SettledDvP::fromValue);
-    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 8550000L);
-    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 5700000L);
-    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 4512500L);
-    assertExists(settledDvPs, dvp -> dvp.paymentAmount.toBigInteger().longValue() == 9737500L);
+    assertTrue(sandbox.observeMatchingContracts(CCP_PARTY, SettledDvP.TEMPLATE_ID, SettledDvP::fromValue, true,
+            dvp -> dvp.paymentAmount.toBigInteger().longValue() == 8550000L,
+            dvp -> dvp.paymentAmount.toBigInteger().longValue() == 5700000L,
+            dvp -> dvp.paymentAmount.toBigInteger().longValue() == 4512500L,
+            dvp -> dvp.paymentAmount.toBigInteger().longValue() == 9737500L));
   }
 
-  private <Cid, Contract> List<Contract> fetchContracts(
-      Party party,
-      Identifier id,
-      int count,
-      Function<String, Cid> idFactory,
-      Function<Value, Contract> ctor) {
-    ArrayList<Contract> result = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      ContractWithId<Cid> contractWithId = sandbox.getMatchedContract(party, id, idFactory);
-      result.add(ctor.apply(contractWithId.record));
-    }
-    return result;
-  }
-
-  private <C> void assertExists(List<C> list, Predicate<C> predicate) {
-    assertTrue(list.stream().anyMatch(predicate));
-  }
 }
