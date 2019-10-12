@@ -20,6 +20,8 @@ A `Repo Trading Model <docs/repo-trading-model.rst>`_
 Building the example
 --------------------
 
+**Disclaimer:** This reference application is intended to demonstrate the capabilities of the DAML. You are recommended to consider other non-functional aspects, like security, resiliency, recoverability, etc prior to production use.
+
 Prerequisites:
 
 * You have Maven and DAML SDK installed installed and available
