@@ -1,11 +1,6 @@
 Repo Market: Example DAML Application
 =====================================
 
-::
-
-  Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
-  SPDX-License-Identifier: Apache-2.0
-
 This document details an example DAML workflow for a repo market clearing house.
 
 In this example:
@@ -169,3 +164,5 @@ Note that you will also need to add these new parties to the DA project file ``d
 
 Next: `Repo Trading Model <docs/repo-trading-model.rst>`_.
 
+CONFIDENTIAL © 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+Any unauthorized use, duplication or distribution is strictly prohibited.
