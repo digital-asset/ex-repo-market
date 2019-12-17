@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -107,8 +106,8 @@ public class RepoTradingMain {
 
     if (!parseArguments(this, cmdArgs)) return 1;
 
-    DamlLedgerClient ledgerClient =
-        DamlLedgerClient.forHostWithLedgerIdDiscovery(host, port, Optional.empty());
+    DamlLedgerClient.Builder builder = DamlLedgerClient.newBuilder(host, port);
+    DamlLedgerClient ledgerClient = builder.build();
     waitForSandbox(ledgerClient, host, port);
 
     return startBots(ledgerClient, botArgs);
