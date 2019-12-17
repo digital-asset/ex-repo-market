@@ -6,15 +6,16 @@ package com.digitalasset.examples.repoTrading;
 
 import static org.junit.Assert.assertTrue;
 
+import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
+import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-
-import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
@@ -67,10 +68,14 @@ public class RepoTradingIT {
     }
   }
 
-  @Rule public DefaultLedgerAdapter sandbox = sandboxC.getLedgerAdapter();
+  @ClassRule public static ExternalResource compile = sandboxC.getClassRule();
+
+  @Rule public ExternalResource sandboxRule = sandboxC.getRule();
+
+  public DefaultLedgerAdapter sandbox = sandboxC.getLedgerAdapter();
 
   @Test
-  public void testWorkflow() {
+  public void testWorkflow() throws InvalidProtocolBufferException {
     // wait for OperatorBot and TradingParticipantBot initial processes and the injected trades
     for (int i = 0; i < 12; i++) {
       sandbox.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);
@@ -79,9 +84,8 @@ public class RepoTradingIT {
     // initiate settlement
     CCP.ContractId ccpCid =
         sandbox.getCreatedContractId(CCP_PARTY, CCP.TEMPLATE_ID, CCP.ContractId::new);
-    sandbox
-        .exerciseChoice(
-            CCP_PARTY, ccpCid.exerciseInitiateSettlement(Instant.parse("2018-06-28T00:00:00Z")));
+    sandbox.exerciseChoice(
+        CCP_PARTY, ccpCid.exerciseInitiateSettlement(Instant.parse("2018-06-28T00:00:00Z")));
 
     InitiateSettlementControl.ContractId isControlCid =
         sandbox.getCreatedContractId(
@@ -90,10 +94,10 @@ public class RepoTradingIT {
             InitiateSettlementControl.ContractId::new);
 
     // waiting for the settlement to be completed. It happens when the control contract is archived
-    sandbox
-        .observeEvent(
-            CCP_PARTY.getValue(),
-            ContractArchived.apply("Main.CCP:InitiateSettlementControl", isControlCid.contractId));
+    sandbox.observeEvent(
+        CCP_PARTY.getValue(),
+        ContractArchived.apply(
+            "Main.CCP:InitiateSettlementControl", new ContractId(isControlCid.contractId)));
 
     assertTrue(
         sandbox.observeMatchingContracts(
