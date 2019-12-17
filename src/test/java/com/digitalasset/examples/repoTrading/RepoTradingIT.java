@@ -13,6 +13,8 @@ import com.digitalasset.testing.junit4.Sandbox;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+
+import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
@@ -42,7 +44,6 @@ public class RepoTradingIT {
   private static Sandbox sandboxC =
       Sandbox.builder()
           .dar(RELATIVE_DAR_PATH)
-          .projectDir(Paths.get("."))
           .module(TEST_MODULE)
           .scenario(TEST_SCENARIO)
           .parties(
@@ -66,9 +67,7 @@ public class RepoTradingIT {
     }
   }
 
-  @ClassRule public static ExternalResource compile = sandboxC.compilation();
-
-  @Rule public Sandbox.Process sandbox = sandboxC.process();
+  @Rule public DefaultLedgerAdapter sandbox = sandboxC.getLedgerAdapter();
 
   @Test
   public void testWorkflow() {
@@ -81,7 +80,6 @@ public class RepoTradingIT {
     CCP.ContractId ccpCid =
         sandbox.getCreatedContractId(CCP_PARTY, CCP.TEMPLATE_ID, CCP.ContractId::new);
     sandbox
-        .getLedgerAdapter()
         .exerciseChoice(
             CCP_PARTY, ccpCid.exerciseInitiateSettlement(Instant.parse("2018-06-28T00:00:00Z")));
 
@@ -93,7 +91,6 @@ public class RepoTradingIT {
 
     // waiting for the settlement to be completed. It happens when the control contract is archived
     sandbox
-        .getLedgerAdapter()
         .observeEvent(
             CCP_PARTY.getValue(),
             ContractArchived.apply("Main.CCP:InitiateSettlementControl", isControlCid.contractId));
