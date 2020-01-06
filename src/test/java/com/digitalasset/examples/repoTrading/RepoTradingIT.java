@@ -8,18 +8,24 @@ import static org.junit.Assert.assertTrue;
 
 import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.Party;
+import com.daml.ledger.javaapi.data.Record;
+import com.daml.ledger.javaapi.data.Value;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
 import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
+import com.digitalasset.testing.utils.ContractWithId;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
+
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
 import main.trade.Trade;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -72,10 +78,18 @@ public class RepoTradingIT {
 
   @Rule public ExternalResource sandboxRule = sandboxC.getRule();
 
-  public DefaultLedgerAdapter sandbox = sandboxC.getLedgerAdapter();
+  public DefaultLedgerAdapter sandbox;
+
+  @Before
+  public void setup() {
+    sandbox = sandboxC.getLedgerAdapter();
+  }
 
   @Test
   public void testWorkflow() throws InvalidProtocolBufferException {
+
+    Integer k=7;
+
     // wait for OperatorBot and TradingParticipantBot initial processes and the injected trades
     for (int i = 0; i < 12; i++) {
       sandbox.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);

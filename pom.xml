@@ -11,7 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.daml.ledger.examples</groupId>
-    <artifactId>ex-repo-trading</artifactId>
+    <artifactId>ex-repo-market</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <organization>
@@ -22,7 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <daml-sdk.version>100.13.40</daml-sdk.version>
+        <daml-sdk.version>100.13.41</daml-sdk.version>
         <daml-plugin.version>0.1</daml-plugin.version>
         <logback.version>1.2.3</logback.version>
         <args4j.version>2.33</args4j.version>
@@ -32,15 +32,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.0-jre</version>
+        </dependency>
+        <dependency>
             <groupId>com.daml.ledger</groupId>
             <artifactId>bindings-rxjava</artifactId>
             <version>${daml-sdk.version}</version>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>com.daml.java</groupId>
             <artifactId>codegen</artifactId>
             <version>${daml-sdk.version}</version>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
