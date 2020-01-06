@@ -6,7 +6,7 @@
 
 BASE=$(dirname $0)/..
 VERSION=0.0.1-SNAPSHOT
-JAR=${BASE}/target/ex-repo-trading-${VERSION}.jar
+JAR=${BASE}/target/ex-repo-market-${VERSION}.jar
 
 run() {
  java -jar -Dlogback.configurationFile=logback.xml $JAR  $@ &
@@ -21,7 +21,7 @@ stop () {
   else
     psSwitch="-ae"
   fi
-  kill $(ps $psSwitch|grep "ex-repo-trading-.*\.jar"|grep -v grep|awk '{print $1}')
+  kill $(ps $psSwitch|grep "ex-repo-market-.*\.jar"|grep -v grep|awk '{print $1}')
   state=stop
 }
 

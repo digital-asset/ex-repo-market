@@ -4,8 +4,6 @@
  */
 package com.digitalasset.examples.repoTrading;
 
-import static org.junit.Assert.assertTrue;
-
 import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.rxjava.DamlLedgerClient;
@@ -13,19 +11,23 @@ import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
 import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
 import main.trade.Trade;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+
+import static org.junit.Assert.assertTrue;
 
 public class RepoTradingIT {
   private static final Logger log = LoggerFactory.getLogger(RepoTradingIT.class);
@@ -72,9 +74,15 @@ public class RepoTradingIT {
 
   @Rule public ExternalResource sandboxRule = sandbox.getRule();
 
+  private DefaultLedgerAdapter ledger;
+
+  @Before
+  public void setup() {
+    ledger = sandbox.getLedgerAdapter();
+  }
+
   @Test
   public void testWorkflow() throws InvalidProtocolBufferException {
-    DefaultLedgerAdapter ledger = sandbox.getLedgerAdapter();
     // wait for OperatorBot and TradingParticipantBot initial processes and the injected trades
     for (int i = 0; i < 12; i++) {
       ledger.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);
