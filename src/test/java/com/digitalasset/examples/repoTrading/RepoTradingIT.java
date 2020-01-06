@@ -87,9 +87,6 @@ public class RepoTradingIT {
 
   @Test
   public void testWorkflow() throws InvalidProtocolBufferException {
-
-    Integer k=7;
-
     // wait for OperatorBot and TradingParticipantBot initial processes and the injected trades
     for (int i = 0; i < 12; i++) {
       sandbox.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);
