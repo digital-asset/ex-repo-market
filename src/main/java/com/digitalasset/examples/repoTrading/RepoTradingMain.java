@@ -106,8 +106,7 @@ public class RepoTradingMain {
 
     if (!parseArguments(this, cmdArgs)) return 1;
 
-    DamlLedgerClient.Builder builder = DamlLedgerClient.newBuilder(host, port);
-    DamlLedgerClient ledgerClient = builder.build();
+    DamlLedgerClient ledgerClient = DamlLedgerClient.newBuilder(host, port).build();
     waitForSandbox(ledgerClient, host, port);
 
     return startBots(ledgerClient, botArgs);
