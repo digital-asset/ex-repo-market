@@ -59,7 +59,10 @@ public class RepoTradingIT {
   public static void runBots(DamlLedgerClient ledgerClient) {
     try {
       RepoTradingMain repoTradingMain = new RepoTradingMain();
-      repoTradingMain.startBots(ledgerClient, new String[] {"data/Trades12-2018-06-28.csv"});
+      // Inject delay is lowered in test. Otherwise trades may not arrive in time and the test
+      // becomes flaky.
+      String[] botArgs = {"data/Trades12-2018-06-28.csv", "--injectDelay", "50"};
+      repoTradingMain.startBots(ledgerClient, botArgs);
     } catch (Exception e) {
       System.out.println("Failed to start bots");
       e.printStackTrace();
