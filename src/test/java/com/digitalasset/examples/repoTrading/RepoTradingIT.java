@@ -4,6 +4,8 @@
  */
 package com.digitalasset.examples.repoTrading;
 
+import static org.junit.Assert.assertTrue;
+
 import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.rxjava.DamlLedgerClient;
@@ -11,6 +13,9 @@ import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
 import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
@@ -20,12 +25,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-
-import static org.junit.Assert.assertTrue;
 
 public class RepoTradingIT {
 
