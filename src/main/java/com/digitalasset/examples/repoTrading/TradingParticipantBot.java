@@ -47,10 +47,6 @@ public class TradingParticipantBot extends RepoMarketBot {
       this.delay = delay;
     }
 
-    TradeStreamer(File tradeFile) {
-      this(tradeFile, 2000);
-    }
-
     @Override
     public void run() {
       commandStream().forEach(this::submit);

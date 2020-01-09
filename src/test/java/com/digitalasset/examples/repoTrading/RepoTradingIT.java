@@ -6,10 +6,13 @@ package com.digitalasset.examples.repoTrading;
 
 import static org.junit.Assert.assertTrue;
 
+import com.daml.ledger.javaapi.data.ContractId;
 import com.daml.ledger.javaapi.data.Party;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.digitalasset.testing.comparator.ledger.ContractArchived;
 import com.digitalasset.testing.junit4.Sandbox;
+import com.digitalasset.testing.ledger.DefaultLedgerAdapter;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -17,15 +20,13 @@ import main.ccp.CCP;
 import main.ccp.InitiateSettlementControl;
 import main.dvp.SettledDvP;
 import main.trade.Trade;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RepoTradingIT {
-  private static final Logger log = LoggerFactory.getLogger(RepoTradingIT.class);
 
   private static final Path RELATIVE_DAR_PATH = Paths.get("./target/ex-repo-market.dar");
   private static final String TEST_MODULE = "RepoMarket";
@@ -39,10 +40,9 @@ public class RepoTradingIT {
   private static Party OPERATOR_PARTY = new Party("Operator");
   private static Party PAYMENTPROCESSOR_PARTY = new Party("PaymentProcessor");
 
-  private static Sandbox sandboxC =
+  private static Sandbox sandbox =
       Sandbox.builder()
           .dar(RELATIVE_DAR_PATH)
-          .projectDir(Paths.get("."))
           .module(TEST_MODULE)
           .scenario(TEST_SCENARIO)
           .parties(
@@ -66,40 +66,44 @@ public class RepoTradingIT {
     }
   }
 
-  @ClassRule public static ExternalResource compile = sandboxC.compilation();
+  @ClassRule public static ExternalResource compile = sandbox.getClassRule();
 
-  @Rule public Sandbox.Process sandbox = sandboxC.process();
+  @Rule public ExternalResource sandboxRule = sandbox.getRule();
+
+  private DefaultLedgerAdapter ledger;
+
+  @Before
+  public void setup() {
+    ledger = sandbox.getLedgerAdapter();
+  }
 
   @Test
-  public void testWorkflow() {
+  public void testWorkflow() throws InvalidProtocolBufferException {
     // wait for OperatorBot and TradingParticipantBot initial processes and the injected trades
     for (int i = 0; i < 12; i++) {
-      sandbox.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);
+      ledger.getCreatedContractId(CCP_PARTY, Trade.TEMPLATE_ID, Trade.ContractId::new);
     }
 
     // initiate settlement
     CCP.ContractId ccpCid =
-        sandbox.getCreatedContractId(CCP_PARTY, CCP.TEMPLATE_ID, CCP.ContractId::new);
-    sandbox
-        .getLedgerAdapter()
-        .exerciseChoice(
-            CCP_PARTY, ccpCid.exerciseInitiateSettlement(Instant.parse("2018-06-28T00:00:00Z")));
+        ledger.getCreatedContractId(CCP_PARTY, CCP.TEMPLATE_ID, CCP.ContractId::new);
+    ledger.exerciseChoice(
+        CCP_PARTY, ccpCid.exerciseInitiateSettlement(Instant.parse("2018-06-28T00:00:00Z")));
 
     InitiateSettlementControl.ContractId isControlCid =
-        sandbox.getCreatedContractId(
+        ledger.getCreatedContractId(
             CCP_PARTY,
             InitiateSettlementControl.TEMPLATE_ID,
             InitiateSettlementControl.ContractId::new);
 
     // waiting for the settlement to be completed. It happens when the control contract is archived
-    sandbox
-        .getLedgerAdapter()
-        .observeEvent(
-            CCP_PARTY.getValue(),
-            ContractArchived.apply("Main.CCP:InitiateSettlementControl", isControlCid.contractId));
+    ledger.observeEvent(
+        CCP_PARTY.getValue(),
+        ContractArchived.apply(
+            "Main.CCP:InitiateSettlementControl", new ContractId(isControlCid.contractId)));
 
     assertTrue(
-        sandbox.observeMatchingContracts(
+        ledger.observeMatchingContracts(
             CCP_PARTY,
             SettledDvP.TEMPLATE_ID,
             SettledDvP::fromValue,
