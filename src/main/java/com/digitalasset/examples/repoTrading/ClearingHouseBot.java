@@ -257,8 +257,10 @@ public class ClearingHouseBot extends RepoMarketBot {
 
     Stream<CommandsAndPendingSet> commandStream = Stream.empty();
 
-    if (ledgerView.getContracts(initiateSettlementControlTemplateId).size() > 0
-        && !settlementInProgress) {
+    boolean hasInitiateSettlementControl = ledgerView.getContracts(initiateSettlementControlTemplateId).size() > 0;
+    log.info("Has initiate settlement control: {}", hasInitiateSettlementControl);
+    log.info("Is settlement in progress: {}", settlementInProgress);
+    if (hasInitiateSettlementControl && !settlementInProgress) {
 
       InitiateSettlementControl sentinel =
           (InitiateSettlementControl)
@@ -612,7 +614,7 @@ public class ClearingHouseBot extends RepoMarketBot {
                 e -> toLocalDate(((SettledDvP) e.getValue()).settlementDate).equals(settlementDate))
             .count();
 
-    log.trace(
+    log.info(
         "finish settlement: nettingInProgress={}, dvpCount={}, settledDvps.count()={}",
         nettingInProgress,
         dvpCount,
