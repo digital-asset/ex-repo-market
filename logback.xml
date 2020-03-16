@@ -31,7 +31,6 @@
     <!--<logger name="com.digitalasset.examples.repoTrading.ClearingHouseBot" level="DEBUG"/>-->
     <!--<logger name="com.digitalasset.examples.repoTrading.PaymentProcessorBot" level="DEBUG"/>-->
     <!--<logger name="com.digitalasset.examples.repoTrading.TradingParticipantBot" level="DEBUG"/>-->
-    <!--<logger name="com.digitalasset.examples.repoTrading.util.ModelMapper" level="DEBUG"/>-->
 
     <root level="INFO">
         <!--<appender-ref ref="STDOUT"/>-->

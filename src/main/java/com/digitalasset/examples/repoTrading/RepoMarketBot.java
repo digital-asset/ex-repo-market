@@ -10,8 +10,8 @@ import com.daml.ledger.rxjava.components.Bot;
 import com.daml.ledger.rxjava.components.LedgerViewFlowable;
 import com.daml.ledger.rxjava.components.helpers.CommandsAndPendingSet;
 import com.daml.ledger.rxjava.components.helpers.CreatedContract;
+import com.daml.ledger.rxjava.components.helpers.TemplateUtils;
 import com.digitalasset.examples.repoTrading.util.Configuration;
-import com.digitalasset.examples.repoTrading.util.ModelMapper;
 import io.reactivex.Flowable;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -21,18 +21,27 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import main.cash.Cash;
+import main.cash.LockedCash;
 import main.cashrequest.CashRequest;
 import main.ccp.CCP;
+import main.ccp.CCPInvite;
+import main.ccp.InitiateSettlementControl;
+import main.ccp.InviteClearingHouse;
 import main.dvp.AllocatedDvP;
 import main.dvp.CashAllocatedDvP;
 import main.dvp.DvP;
 import main.dvp.SettledDvP;
+import main.genesis.Genesis;
 import main.netobligation.NetObligation;
 import main.netobligation.NetObligationRequest;
 import main.netting.NettingGroup;
+import main.security.MergedSecurity;
 import main.security.Security;
 import main.trade.NovatedTrade;
 import main.trade.Trade;
+import main.trade.TradeRegistrationRequest;
+import main.tradingparticipant.InviteTradingParticipant;
+import main.tradingparticipant.TradingParticipant;
 import org.pcollections.PMap;
 import org.pcollections.PSet;
 import org.slf4j.Logger;
@@ -98,8 +107,31 @@ public abstract class RepoMarketBot {
   }
 
   private static Template asDomainObject(CreatedContract created) {
-    return ModelMapper.domainObjectFromRecord(
-        created.getTemplateId(), created.getCreateArguments());
+    log.trace("{} maps to {} ", created.getTemplateId());
+    return TemplateUtils.contractTransformer(
+            Cash.class,
+            LockedCash.class,
+            Security.class,
+            MergedSecurity.class,
+            NovatedTrade.class,
+            DvP.class,
+            CashAllocatedDvP.class,
+            AllocatedDvP.class,
+            SettledDvP.class,
+            NetObligationRequest.class,
+            NetObligation.class,
+            TradeRegistrationRequest.class,
+            Trade.class,
+            Genesis.class,
+            InviteClearingHouse.class,
+            InitiateSettlementControl.class,
+            CCPInvite.class,
+            CCP.class,
+            InviteTradingParticipant.class,
+            TradingParticipant.class,
+            NettingGroup.class,
+            CashRequest.class)
+        .apply(created);
   }
 
   private Flowable<CommandsAndPendingSet> runProcess(
